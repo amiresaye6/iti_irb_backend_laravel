@@ -14,6 +14,8 @@ return new class extends Migration
             $table->string('serial_number', 50)->unique()->nullable();
             $table->text('title')->nullable();
             $table->string('principal_investigator', 255)->nullable();
+            $table->text('co_investigators')->nullable();
+            $table->text('keywords')->nullable();
             $table->enum('current_stage', [
                 'pending_admin', 'awaiting_initial_payment', 'awaiting_sample_calc',
                 'awaiting_sample_payment', 'under_review', 'approved_by_reviewer', 'approved', 'rejected'

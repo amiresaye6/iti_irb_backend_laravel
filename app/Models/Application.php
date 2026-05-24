@@ -16,6 +16,8 @@ class Application extends Model
         'serial_number',
         'title',
         'principal_investigator',
+        'co_investigators',
+        'keywords',
         'current_stage',
         'is_blinded',
     ];

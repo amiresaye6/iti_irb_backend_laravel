@@ -10,18 +10,20 @@ class DocumentSeeder extends Seeder
     public function run(): void
     {
         $documentTypes = [
-            'protocol', 'conflict_of_interest', 'irb_checklist',
-            'pi_consent', 'patient_consent', 'photos_biopsies_consent', 'protocol_review_app'
+            'protocol_review_app', 'conflict_of_interest', 'oral_presentaion',
+            'pi_consent', 'patient_consent', 'research_procedures_approval', 'research_protocol',
+            'research_alignment_with_research_plan'
         ];
 
         $filePaths = [
-            'protocol' => 'uploads/seed/dummy_protocol.pdf',
+            'protocol_review_app' => 'uploads/seed/dummy_protocol.pdf',
             'conflict_of_interest' => 'uploads/seed/dummy_conflict.pdf',
-            'irb_checklist' => 'uploads/seed/dummy_checklist.pdf',
+            'oral_presentaion' => 'uploads/seed/dummy_oral_presentaion.pdf',
             'pi_consent' => 'uploads/seed/dummy_pi_consent.pdf',
             'patient_consent' => 'uploads/seed/dummy_patient_consent.pdf',
-            'photos_biopsies_consent' => 'uploads/seed/dummy_patient_consent.pdf',
-            'protocol_review_app' => 'uploads/seed/dummy_certificate.pdf',
+            'research_procedures_approval' => 'uploads/seed/dummy_patient_consent.pdf',
+            'research_protocol' => 'uploads/seed/dummy_research_protocol.pdf',
+            'research_alignment_with_research_plan' => 'uploads/seed/dummy_alignment.pdf'
         ];
 
         // Create documents for all 15 applications
