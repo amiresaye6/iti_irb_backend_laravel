@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 class ApplicationService
 {
-    public function storeApp($validated,$student_id)
+    public function store($validated,$student_id)
     {
         // application attributes
         $validatedApp = [
@@ -28,6 +28,18 @@ class ApplicationService
         $application->save();
 
         return $application;
+    }
+
+    public function getAppsByStudentId($id)
+    {
+        $applications = Application::where("student_id",$id)->get();
+        return $applications;
+    }
+
+    public function getApplicationByStage($stage)
+    {
+        $applications = Application::where('current_stage',$stage)->get();
+        return $applications;
     }
 
     

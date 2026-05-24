@@ -6,10 +6,12 @@ use App\Models\Application;
 use App\Models\Document;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class DocumentService
 {
-    public function store($file,$type,$application_id){
+    public function store($file,$type,$application_id)
+    {
         // generate unique file name
             $fileName = Str::uuid() . '.' . $file->getClientOriginalExtension();
 
@@ -43,4 +45,30 @@ class DocumentService
         }
         return;
     }
+
+    public function getDocsByAppId($app_id)
+    {
+        $docs = Document::where('application_id',$app_id)->get();
+        return $docs;
+    }
+
+    public function getDocById($id)
+    {
+        $doc = Document::where('id',$id)->get();
+        return $doc;
+    }
+
+    public function deleteDoc($id)
+    {
+        $doc = Document::findOrFail($id);
+
+        if (Storage::disk('public')->exists($doc->file_path)) {
+            Storage::disk('public')->delete($doc->file_path);
+        }
+
+        $doc->delete();
+
+        return true;
+    }
+
 }
