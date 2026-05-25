@@ -26,6 +26,8 @@ Route::middleware('auth:sanctum')->prefix('applications')->group(function () {
     Route::get('/student', [ApplicationController::class, 'getAppsByUserId']);
     Route::get('/student/{id}', [ApplicationController::class, 'getAppsByStudentId']);
     Route::get('/{id}', [ApplicationController::class, 'show']);
+    Route::patch('/{id}', [ApplicationController::class, 'edit']);
+    Route::post('/{id}', [ApplicationController::class, 'toNextStage']);
     Route::get('/{id}/Docs', [DocumentController::class, 'getDocsByAppId']);
 });
 

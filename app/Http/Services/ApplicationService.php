@@ -42,6 +42,46 @@ class ApplicationService
         return $applications;
     }
 
+    public function toNextStage($id)
+    {
+        $application = Application::findOrFail($id);
+        $message ="";
+        switch ($application->current_stage) {
+
+            case 'pending_admin':
+                $application->current_stage = 'under_review';
+                $message = "stage updated from pending_admin to under_review";
+                break;
+
+            case 'under_review':
+                $application->current_stage = 'approved_by_reviewer';
+                $message = "stage updated from under_review to approved_by_reviewer";
+                break;
+
+            case 'approved_by_reviewer':
+                $application->current_stage = 'awaiting_payment';
+                $message = "stage updated from approved_by_reviewer to awaiting_payment";
+                break;
+
+            case 'awaiting_payment':
+                $application->current_stage = 'approved';
+                $message = "stage updated from awaiting_payment to approved";
+                break;
+
+            case 'approved':
+            case 'rejected':
+                $message = "Application is already in final stage";
+                break;
+                
+            default:
+                $message = "Invalid current stage";
+        }
+
+        $application->save();
+
+        return $message;
+    }
+
     
 
 }
