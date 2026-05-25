@@ -11,6 +11,7 @@ use App\Http\Services\ApplicationService;
 use App\Http\Services\DocumentService;
 
 use App\Http\Requests\Application\StoreAppRequest;
+use App\Http\Requests\Application\EditAppRequest;
 
 
 use Illuminate\Support\Facades\Storage;
@@ -46,6 +47,29 @@ class ApplicationController extends Controller
             return response()->json($application, 400);
         }
         return response()->json($application, 201);
+    }
+
+    public function edit(EditAppRequest $request, $app_id)
+    {
+        $validated = $request->validated();
+
+        foreach ($validated as $key => $file) {
+            $oldDocument = Document::where('application_id', $app_id)->where('document_type', $key)->first();  
+            if ($oldDocument) {
+                $this->documentationService->deleteDoc($oldDocument->id);
+            }
+            $this->documentationService->store($file, $key, $app_id);
+        }
+
+        return response()->json(['message' => 'Documents updated successfully.'], 200);
+    }
+
+    public function toNextStage($id)
+    {
+        $message = $this->applicationService->toNextStage($id);
+        return response()->json([
+            'message' => $message,
+        ]);
     }
 
     public function getAppsByStudentId($id){
