@@ -23,6 +23,7 @@ Route::middleware('auth:sanctum')->prefix('applications')->group(function () {
     Route::get('/awaiting_payment', [ApplicationController::class, 'get_awaiting_payment_Apps']);
     Route::get('/approved', [ApplicationController::class, 'get_approved_Apps']);
     Route::get('/rejected', [ApplicationController::class, 'get_rejected_Apps']);
+    Route::post('/reject/{id}', [ApplicationController::class, 'rejectApp']);
     Route::get('/student', [ApplicationController::class, 'getAppsByUserId']);
     Route::get('/student/{id}', [ApplicationController::class, 'getAppsByStudentId']);
     Route::get('/{id}', [ApplicationController::class, 'show']);

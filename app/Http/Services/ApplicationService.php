@@ -82,6 +82,12 @@ class ApplicationService
         return $message;
     }
 
-    
+    public function reject($id)
+    {
+        $application = Application::findOrFail($id);
+        $application->current_stage = 'rejected';
+        $application->save();
+        return $application;
+    }
 
 }

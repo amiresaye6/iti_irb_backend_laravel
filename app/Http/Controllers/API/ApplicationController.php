@@ -77,6 +77,13 @@ class ApplicationController extends Controller
         ]);
     }
 
+    // reject application
+    public function rejectApp($id)
+    {
+        $application = $this->applicationService->reject($id);
+        return response()->json($application, 200);
+    }
+
     // get all application for specific student
     public function getAppsByStudentId($id){
         $applications = $this->applicationService->getAppsByStudentId($id);
