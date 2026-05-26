@@ -48,7 +48,15 @@ class LoginRequest extends FormRequest
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
             ]);
+
         }
+        $user = Auth::user();
+        if ((int) $user->is_active !== 1) {
+        Auth::logout();
+        throw ValidationException::withMessages([
+         'email' => 'حسابك قيد المراجعة، يرجى انتظار موافقة الإدارة',
+        ]);
+     }
 
         RateLimiter::clear($this->throttleKey());
     }
