@@ -38,6 +38,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
+             'role' => 'string',
         ];
     }
 
@@ -76,5 +77,34 @@ class User extends Authenticatable
     public function logs()
     {
         return $this->hasMany(Log::class, 'user_id');
+    }
+
+    //healper methods
+    public function isAdmin(): bool
+    {
+    return $this->role === 'admin';
+    }
+
+    public function isSuperAdmin(): bool
+    {
+    return $this->role === 'super_admin';
+    }
+    public function isStudent(): bool
+    {
+    return $this->role === 'student';
+    }
+
+    public function isReviewer(): bool
+    {
+    return $this->role === 'reviewer';
+    }
+    public function isManager(): bool
+    {
+    return $this->role === 'manager';
+    }
+
+    public function hasRole(string|array $roles): bool
+    {
+    return in_array($this->role, (array) $roles);
     }
 }
