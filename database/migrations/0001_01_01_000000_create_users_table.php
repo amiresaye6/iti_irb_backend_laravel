@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('national_id', 20);
             $table->string('phone_number', 20);
             $table->string('faculty', 150);
-            $table->string('department', 150);
+            $table->string('department', 150)->nullable();;
             $table->string('id_front_url', 255)->nullable();
             $table->string('id_back_url', 255)->nullable();
             $table->boolean('is_active')->default(false);
