@@ -9,6 +9,8 @@ use App\Http\Services\AuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use App\Models\Log;
+
 
 class AuthController extends Controller
 {
@@ -24,7 +26,12 @@ class AuthController extends Controller
     $result = $this->authService->login(
         $request->only('email', 'password')
     );
-
+    $userId = $result['user']->id;
+    Log::create([
+    'user_id' => $userId,
+    'type'    => 'auth', 
+    'action'  => "المستخدم [{$userId}] قام بتسجيل الدخول من IP: {$request->ip()}"
+    ]);
     return response()->json([
         'status'  => true,
         'token'   => $result['token'],
@@ -34,7 +41,14 @@ class AuthController extends Controller
     }
     public function logout(Request $request): JsonResponse
     {
-       $this->authService->logout($request->user());
+        $user = $request->user();
+       $this->authService->logout($user);
+       
+       Log::create([
+       'user_id' => $user->id,
+       'type'    => 'auth',
+       'action'  => "المستخدم [{$user->id}] قام بتسجيل الخروج من IP: {$request->ip()}"
+     ]);
 
         return response()->json([
             'message' => 'Logout Successful',
