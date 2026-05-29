@@ -1,5 +1,5 @@
 <?php
-
+use App\Http\Controllers\API\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
@@ -12,6 +12,10 @@ Route::get('/user', function (Request $request) {
 
 // login route
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register',         [AuthController::class, 'register']);
+Route::prefix('auth')->group(function () {
+    Route::post('/forgot-password',  [AuthController::class, 'forgotPassword']);
+});
 
 // applications routes
 Route::middleware('auth:sanctum')->prefix('applications')->group(function () {
@@ -35,4 +39,29 @@ Route::middleware('auth:sanctum')->prefix('applications')->group(function () {
 Route::middleware('auth:sanctum')->prefix('Documents')->group(function () {
     Route::get('/{id}', [DocumentController::class, 'show']);
     Route::delete('/{id}', [DocumentController::class, 'destroy']);
+});
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    Route::post('/auth/logout', [AuthController::class, 'logout']);
+    Route::get('/auth/profile', [UserController::class, 'show']);
+    Route::put('/profile', [UserController::class, 'update']);
+
+    // Admin only
+    Route::middleware('role:admin')->group(function () {
+        Route::get('/users',              [UserController::class, 'index']);
+        Route::get('/users/{id}',         [UserController::class, 'show']);
+        Route::delete('/users/{id}',      [UserController::class, 'destroy']);
+        Route::post('/users/{id}/activate', [UserController::class, 'activate']);
+        Route::post('/admin/add_staff',[AuthController::class, 'register']);
+        Route::get('/pending_users', [UserController::class, 'showPendingUsers']);
+    
+    });
+
+    // Super Admin only
+    Route::middleware('role:super_admin')->group(function () {
+        Route::get('/super-admin/users',  [SuperAdminController::class, 'index']);
+    });
+
+
 });
