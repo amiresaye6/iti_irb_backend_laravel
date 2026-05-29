@@ -79,7 +79,7 @@ class User extends Authenticatable
         return $this->hasMany(Log::class, 'user_id');
     }
 
-    //healper methods
+    //helper methods
     public function isAdmin(): bool
     {
     return $this->role === 'admin';
