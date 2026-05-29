@@ -3,6 +3,7 @@
 namespace App\Http\Services;
 
 use App\Models\User;
+use App\Models\Log;
 use App\Http\Services\ImageUploadService;
 
 class UserService
@@ -52,13 +53,21 @@ class UserService
     public function updateProfile(User $user, array $data): User
     {
         $user->update([
-            'full_name'    => $data['full_name'] ?? $user->full_name,
             'phone_number' => $data['phone_number'] ?? $user->phone_number,
             'faculty'      => $data['faculty'] ?? $user->faculty,
             'department'   => $data['department'] ?? $user->department,
         ]);
+        Log::create([
+        'user_id' => $user->id,
+        'type'    => 'profile',
+        'action'  => "User [{$user->id}] updated profile details from IP: " . request()->ip()
+        ]);
 
         return $user;
+    }
+    public function showpendingUsers()
+    {
+        return User::where('is_active',0)->where('role','student')->latest()->get();
     }
     
 }

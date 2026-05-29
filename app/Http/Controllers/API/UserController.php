@@ -55,7 +55,6 @@ class UserController extends Controller
     public function update(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'full_name'    => ['sometimes', 'string', 'min:10'],
             'phone_number' => ['sometimes', 'string'],
             'faculty'      => ['sometimes', 'string'],
             'department'   => ['sometimes', 'string'],
@@ -68,6 +67,15 @@ class UserController extends Controller
             'message' => 'تم تحديث بيانات البروفايل بنجاح.',
             'data'    => $updatedUser
         ], 200);
+    }
+    public function showPendingUsers(): JsonResponse
+    {
+        $pendingUsers = $this->userService->showPendingUsers();
+        return response()->json([
+            'status'  => true,
+            'data'    => $pendingUsers
+        ], 200);
+
     }
     
 }
