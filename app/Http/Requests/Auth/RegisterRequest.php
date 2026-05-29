@@ -38,10 +38,11 @@ class RegisterRequest extends FormRequest
             
             'phone_number' => ['required', 'string', 'max:20'],
             'faculty'      => ['required', 'string', 'max:255'],
-            'department'   => ['required', 'string', 'max:255'],
+            'department'   => ['required_if:role,student', 'string', 'max:255'],
             
-            'id_front'     => ['required', 'file', 'image', 'mimes:jpeg,jpg,png', 'max:2048'],
-            'id_back'      => ['required', 'file', 'image', 'mimes:jpeg,jpg,png', 'max:2048'],
+            'id_front'     => ['required_if:role,student', 'file', 'image', 'mimes:jpeg,jpg,png,pdf', 'max:2048'],
+            'id_back'      => ['required_if:role,student', 'file', 'image', 'mimes:jpeg,jpg,png,pdf', 'max:2048'],
+            'role'         => ['sometimes', 'string','in:admin,reviewer,manager,super_admin,student'],
         ];
     }
     public function messages(): array
