@@ -12,30 +12,31 @@ Route::get('/user', function (Request $request) {
 
 // login route
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register',         [AuthController::class, 'register']);
+Route::post('/register', [AuthController::class, 'register']);
 Route::prefix('auth')->group(function () {
     Route::post('/forgot-password',  [AuthController::class, 'forgotPassword']);
 });
 
 // applications routes
 Route::middleware('auth:sanctum')->prefix('applications')->group(function () {
-    Route::get('/', [ApplicationController::class, 'index']);
-    Route::post('/', [ApplicationController::class, 'store']);
-    Route::get('/pending_admin', [ApplicationController::class, 'get_pending_admin_Apps']);
-    Route::get('/under_review', [ApplicationController::class, 'get_under_review_Apps']);
-    Route::get('/approved_by_reviewer', [ApplicationController::class, 'get_approved_by_reviewer_Apps']);
-    Route::get('/awaiting_payment', [ApplicationController::class, 'get_awaiting_payment_Apps']);
-    Route::get('/approved', [ApplicationController::class, 'get_approved_Apps']);
-    Route::get('/rejected', [ApplicationController::class, 'get_rejected_Apps']);
-    Route::post('/reject/{id}', [ApplicationController::class, 'rejectApp']);
-    Route::get('/student', [ApplicationController::class, 'getAppsByUserId']);
-    Route::get('/student/{id}', [ApplicationController::class, 'getAppsByStudentId']);
-    Route::get('/{id}', [ApplicationController::class, 'show']);
-    Route::patch('/{id}', [ApplicationController::class, 'edit']);
-    Route::post('/{id}', [ApplicationController::class, 'toNextStage']);
+    Route::get('/', [ApplicationController::class, 'index'])->middleware('role:admin,manager');
+    Route::post('/', [ApplicationController::class, 'store'])->middleware('role:student');
+    Route::get('/pending_admin', [ApplicationController::class, 'get_pending_admin_Apps'])->middleware('role:admin');
+    Route::get('/under_review', [ApplicationController::class, 'get_under_review_Apps'])->middleware('role:admin');
+    Route::get('/approved_by_reviewer', [ApplicationController::class, 'get_approved_by_reviewer_Apps'])->middleware('role:admin');
+    Route::get('/awaiting_payment', [ApplicationController::class, 'get_awaiting_payment_Apps'])->middleware('role:admin');
+    Route::get('/approved', [ApplicationController::class, 'get_approved_Apps'])->middleware('role:admin');
+    Route::get('/rejected', [ApplicationController::class, 'get_rejected_Apps'])->middleware('role:admin');
+    Route::post('/reject/{id}', [ApplicationController::class, 'rejectApp'])->middleware('role:admin');
+    Route::get('/student', [ApplicationController::class, 'getAppsByUserId'])->middleware('role:student');
+    Route::get('/student/{id}', [ApplicationController::class, 'getAppsByStudentId'])->middleware('role:admin');
+    Route::get('/{id}', [ApplicationController::class, 'show'])->middleware('role:admin,student');
+    Route::patch('/{id}', [ApplicationController::class, 'edit'])->middleware('role:student');
+    Route::post('/{id}', [ApplicationController::class, 'toNextStage'])->middleware('role:admin,reviewer,manager');
     Route::get('/{id}/Docs', [DocumentController::class, 'getDocsByAppId']);
 });
 
+// Documents routes
 Route::middleware('auth:sanctum')->prefix('Documents')->group(function () {
     Route::get('/{id}', [DocumentController::class, 'show']);
     Route::delete('/{id}', [DocumentController::class, 'destroy']);
