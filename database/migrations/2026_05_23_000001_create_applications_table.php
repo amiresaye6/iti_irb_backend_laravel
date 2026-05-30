@@ -17,8 +17,9 @@ return new class extends Migration
             $table->text('co_investigators')->nullable();
             $table->text('keywords')->nullable();
             $table->enum('current_stage', [
-                'pending_admin','under_review', 'approved_by_reviewer', 'awaiting_payment', 'approved', 'rejected'
+                'pending_admin','under_review', 'final_review', 'awaiting_payment', 'approved', 'rejected'
             ])->default('pending_admin');
+            $table->boolean('needs_modification')->default(false);
             $table->boolean('is_blinded')->default(true);
             $table->timestamp('created_at')->useCurrent();
             $table->timestamp('updated_at')->useCurrent()->useCurrentOnUpdate();

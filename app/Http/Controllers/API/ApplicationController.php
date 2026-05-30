@@ -110,8 +110,8 @@ class ApplicationController extends Controller
     }
 
     // get all approved_by_reviewer apps
-    public function get_approved_by_reviewer_Apps(){
-        $applications = $this->applicationService->getApplicationByStage('approved_by_reviewer');
+    public function get_final_review_Apps(){
+        $applications = $this->applicationService->getApplicationByStage('final_review');
         return response()->json($applications, 200);
     }
 
