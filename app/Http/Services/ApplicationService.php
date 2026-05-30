@@ -90,4 +90,10 @@ class ApplicationService
         return $application;
     }
 
+    public function toggle_needsModification($id){
+        $application = Application::findOrFail($id);
+        $application->needs_modification = !$application->needs_modification;
+        $application->save();
+        return $application;
+    }
 }

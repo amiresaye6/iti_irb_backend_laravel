@@ -33,6 +33,8 @@ Route::middleware('auth:sanctum')->prefix('applications')->group(function () {
     Route::patch('/{id}', [ApplicationController::class, 'edit'])->middleware('role:student');
     Route::post('/{id}', [ApplicationController::class, 'toNextStage'])->middleware('role:admin,reviewer,manager');
     Route::get('/{id}/Docs', [DocumentController::class, 'getDocsByAppId']);
+    Route::post('/{id}/ask-for-modification', [ApplicationController::class, 'askForModification'])->middleware('role:admin,reviewer,manager');
+    Route::post('/{id}/ask-for-review', [ApplicationController::class, 'askForReview_afterModifications'])->middleware('role:student');
 });
 
 // Documents routes
