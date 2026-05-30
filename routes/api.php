@@ -22,7 +22,7 @@ Route::middleware('auth:sanctum')->prefix('applications')->group(function () {
     Route::post('/', [ApplicationController::class, 'store'])->middleware('role:student');
     Route::get('/pending_admin', [ApplicationController::class, 'get_pending_admin_Apps'])->middleware('role:admin');
     Route::get('/under_review', [ApplicationController::class, 'get_under_review_Apps'])->middleware('role:admin');
-    Route::get('/approved_by_reviewer', [ApplicationController::class, 'get_approved_by_reviewer_Apps'])->middleware('role:admin');
+    Route::get('/final_review', [ApplicationController::class, 'get_final_review_Apps'])->middleware('role:admin');
     Route::get('/awaiting_payment', [ApplicationController::class, 'get_awaiting_payment_Apps'])->middleware('role:admin');
     Route::get('/approved', [ApplicationController::class, 'get_approved_Apps'])->middleware('role:admin');
     Route::get('/rejected', [ApplicationController::class, 'get_rejected_Apps'])->middleware('role:admin');
