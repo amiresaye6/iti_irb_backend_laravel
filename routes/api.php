@@ -12,10 +12,9 @@ Route::get('/user', function (Request $request) {
 
 // login route
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register', [AuthController::class, 'register']);
-Route::prefix('auth')->group(function () {
-    Route::post('/forgot-password',  [AuthController::class, 'forgotPassword']);
-});
+Route::post('/register',         [AuthController::class, 'register']);
+Route::post('/forgot-password', [AuthController::class, 'sendPasswordResetLink']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
 
 // applications routes
 Route::middleware('auth:sanctum')->prefix('applications')->group(function () {
