@@ -309,84 +309,233 @@ class PaymentService
     /**
      * Get pending payments for a student (apps at awaiting_payment stage).
      */
-    public function getPendingPayments(int $studentId): array
+    public function getPendingPayments(int $studentId, array $options = []): array
     {
-        $applications = Application::where('student_id', $studentId)
-            ->where('current_stage', 'awaiting_payment')
-            ->with(['payments' => function ($query) {
-                $query->where('status', 'pending')->latest('created_at');
-            }])
-            ->get();
+        $query = Payment::where('status', 'pending')
+            ->whereHas('application', function ($q) use ($studentId) {
+                $q->where('student_id', $studentId)
+                  ->where('current_stage', 'awaiting_payment');
+            })
+            ->with('application:id,title,serial_number,current_stage');
 
-        $result = [];
-
-        foreach ($applications as $app) {
-            $pendingPayment = $app->payments->first();
-
-            if ($pendingPayment) {
-                $result[] = [
-                    'application_id' => $app->id,
-                    'serial_number'  => $app->serial_number,
-                    'title'          => $app->title,
-                    'current_stage'  => $app->current_stage,
-                    'amount'         => $pendingPayment->amount,
-                    'payment_id'     => $pendingPayment->id,
-                ];
-            }
+        // Search
+        if (!empty($options['search'])) {
+            $search = $options['search'];
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('application', function ($aq) use ($search) {
+                    $aq->where('title', 'like', "%{$search}%")
+                       ->orWhere('serial_number', 'like', "%{$search}%");
+                })
+                ->orWhere('id', $search);
+            });
         }
 
-        return $result;
+        // Filters
+        if (isset($options['min_amount'])) {
+            $query->where('amount', '>=', (float) $options['min_amount']);
+        }
+        if (isset($options['max_amount'])) {
+            $query->where('amount', '<=', (float) $options['max_amount']);
+        }
+        if (!empty($options['start_date'])) {
+            $query->whereDate('created_at', '>=', $options['start_date']);
+        }
+        if (!empty($options['end_date'])) {
+            $query->whereDate('created_at', '<=', $options['end_date']);
+        }
+
+        // Sorting
+        $sortBy = $options['sort_by'] ?? 'created_at';
+        $sortOrder = strtolower($options['sort_order'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+
+        if ($sortBy === 'amount') {
+            $query->orderBy('amount', $sortOrder);
+        } else {
+            $query->orderBy('created_at', $sortOrder);
+        }
+
+        // Pagination
+        $perPage = (int) ($options['per_page'] ?? 10);
+        $paginator = $query->paginate($perPage);
+
+        // Map items to match old schema structure
+        $items = collect($paginator->items())->map(function ($payment) {
+            return [
+                'application_id' => $payment->application->id,
+                'serial_number'  => $payment->application->serial_number,
+                'title'          => $payment->application->title,
+                'current_stage'  => $payment->application->current_stage,
+                'amount'         => $payment->amount,
+                'payment_id'     => $payment->id,
+            ];
+        })->toArray();
+
+        return [
+            'data' => $items,
+            'pagination' => [
+                'total'    => $paginator->total(),
+                'page'     => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+            ]
+        ];
     }
 
     /**
      * Get payment history for a student.
      */
-    public function getPaymentHistory(int $studentId)
+    public function getPaymentHistory(int $studentId, array $options = []): array
     {
-        return Payment::whereHas('application', function ($query) use ($studentId) {
-            $query->where('student_id', $studentId);
+        $query = Payment::whereHas('application', function ($q) use ($studentId) {
+            $q->where('student_id', $studentId);
         })
-            ->with('application:id,title,serial_number')
-            ->orderByDesc('created_at')
-            ->get();
+        ->with('application:id,title,serial_number');
+
+        // Search
+        if (!empty($options['search'])) {
+            $search = $options['search'];
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('application', function ($aq) use ($search) {
+                    $aq->where('title', 'like', "%{$search}%")
+                       ->orWhere('serial_number', 'like', "%{$search}%");
+                })
+                ->orWhere('transaction_reference', 'like', "%{$search}%")
+                ->orWhere('gateway_transaction_id', 'like', "%{$search}%");
+            });
+        }
+
+        // Filters
+        if (!empty($options['status'])) {
+            $query->where('status', $options['status']);
+        }
+        if (isset($options['min_amount'])) {
+            $query->where('amount', '>=', (float) $options['min_amount']);
+        }
+        if (isset($options['max_amount'])) {
+            $query->where('amount', '<=', (float) $options['max_amount']);
+        }
+        if (!empty($options['start_date'])) {
+            $query->whereDate('created_at', '>=', $options['start_date']);
+        }
+        if (!empty($options['end_date'])) {
+            $query->whereDate('created_at', '<=', $options['end_date']);
+        }
+
+        // Sorting
+        $sortBy = $options['sort_by'] ?? 'created_at';
+        $sortOrder = strtolower($options['sort_order'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+
+        if ($sortBy === 'amount') {
+            $query->orderBy('amount', $sortOrder);
+        } elseif ($sortBy === 'paid_at') {
+            $query->orderBy('paid_at', $sortOrder);
+        } else {
+            $query->orderBy('created_at', $sortOrder);
+        }
+
+        // Pagination
+        $perPage = (int) ($options['per_page'] ?? 10);
+        $paginator = $query->paginate($perPage);
+
+        return [
+            'data' => $paginator->items(),
+            'pagination' => [
+                'total'    => $paginator->total(),
+                'page'     => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+            ]
+        ];
     }
 
     /**
      * Get all payments with student info + aggregate stats (admin dashboard).
      */
-    public function getAllPaymentsWithStats(): array
+    public function getAllPaymentsWithStats(array $options = []): array
     {
-        $payments = Payment::with([
+        $query = Payment::with([
             'application:id,title,serial_number,student_id',
             'application.student:id,full_name,email',
-        ])
-            ->orderByDesc('created_at')
-            ->get();
+        ]);
 
-        $totalRevenue   = 0;
-        $completedCount = 0;
-        $pendingCount   = 0;
-        $failedCount    = 0;
-
-        foreach ($payments as $pay) {
-            if ($pay->status === 'completed') {
-                $totalRevenue += $pay->amount;
-                $completedCount++;
-            } elseif ($pay->status === 'pending') {
-                $pendingCount++;
-            } else {
-                $failedCount++;
-            }
+        // Search
+        if (!empty($options['search'])) {
+            $search = $options['search'];
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('application', function ($aq) use ($search) {
+                    $aq->where('title', 'like', "%{$search}%")
+                       ->orWhere('serial_number', 'like', "%{$search}%")
+                       ->orWhereHas('student', function ($sq) use ($search) {
+                           $sq->where('full_name', 'like', "%{$search}%")
+                             ->orWhere('email', 'like', "%{$search}%");
+                       });
+                })
+                ->orWhere('transaction_reference', 'like', "%{$search}%")
+                ->orWhere('gateway_transaction_id', 'like', "%{$search}%")
+                ->orWhere('id', $search);
+            });
         }
 
+        // Filters
+        if (!empty($options['status'])) {
+            $query->where('status', $options['status']);
+        }
+        if (isset($options['min_amount'])) {
+            $query->where('amount', '>=', (float) $options['min_amount']);
+        }
+        if (isset($options['max_amount'])) {
+            $query->where('amount', '<=', (float) $options['max_amount']);
+        }
+        if (!empty($options['start_date'])) {
+            $query->whereDate('created_at', '>=', $options['start_date']);
+        }
+        if (!empty($options['end_date'])) {
+            $query->whereDate('created_at', '<=', $options['end_date']);
+        }
+
+        // Sorting
+        $sortBy = $options['sort_by'] ?? 'created_at';
+        $sortOrder = strtolower($options['sort_order'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+
+        if ($sortBy === 'amount') {
+            $query->orderBy('amount', $sortOrder);
+        } elseif ($sortBy === 'paid_at') {
+            $query->orderBy('paid_at', $sortOrder);
+        } elseif ($sortBy === 'student_name') {
+            // Join tables for sorting by student name
+            $query->select('payments.*')
+                ->join('applications', 'payments.application_id', '=', 'applications.id')
+                ->join('users', 'applications.student_id', '=', 'users.id')
+                ->orderBy('users.full_name', $sortOrder);
+        } else {
+            $query->orderBy('payments.created_at', $sortOrder);
+        }
+
+        // Calculate Stats over the filtered query BEFORE applying pagination
+        $statsQueryCompleted = clone $query;
+        $statsQueryPending   = clone $query;
+        $statsQueryFailed    = clone $query;
+
+        $totalRevenue   = (float) $statsQueryCompleted->where('status', 'completed')->sum('amount');
+        $completedCount = $statsQueryCompleted->where('status', 'completed')->count();
+        $pendingCount   = $statsQueryPending->where('status', 'pending')->count();
+        $failedCount    = $statsQueryFailed->where('status', 'failed')->count();
+
+        // Pagination
+        $perPage = (int) ($options['per_page'] ?? 10);
+        $paginator = $query->paginate($perPage);
+
         return [
-            'payments' => $payments,
+            'payments' => $paginator->items(),
             'stats'    => [
                 'total_revenue'   => round($totalRevenue, 2),
                 'completed_count' => $completedCount,
                 'pending_count'   => $pendingCount,
                 'failed_count'    => $failedCount,
             ],
+            'pagination' => [
+                'total'    => $paginator->total(),
+                'page'     => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+            ]
         ];
     }
 

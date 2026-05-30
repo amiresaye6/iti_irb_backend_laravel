@@ -301,16 +301,75 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/payments/admin",
+							"raw": "{{baseUrl}}/payments/admin?search=&status=&min_amount=&max_amount=&start_date=&end_date=&sort_by=&sort_order=&page=1&per_page=10",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"payments",
 								"admin"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search by application title, serial, or student name/email"
+								},
+								{
+									"key": "status",
+									"value": "",
+									"description": "Filter by payment status (pending, completed, failed)",
+									"disabled": true
+								},
+								{
+									"key": "min_amount",
+									"value": "",
+									"description": "Filter by minimum EGP amount",
+									"disabled": true
+								},
+								{
+									"key": "max_amount",
+									"value": "",
+									"description": "Filter by maximum EGP amount",
+									"disabled": true
+								},
+								{
+									"key": "start_date",
+									"value": "",
+									"description": "Filter created on or after date (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "end_date",
+									"value": "",
+									"description": "Filter created on or before date (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "sort_by",
+									"value": "",
+									"description": "Sort field: created_at, paid_at, amount, student_name",
+									"disabled": true
+								},
+								{
+									"key": "sort_order",
+									"value": "",
+									"description": "Sort ordering: asc, desc",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Current page number"
+								},
+								{
+									"key": "per_page",
+									"value": "10",
+									"description": "Records to show per page"
+								}
 							]
 						},
-						"description": "Retrieve general dashboard statistics and recent payment records for administrators.\n\n### Returns:\n- Total revenue (sum of paid transactions).\n- Counts of paid, pending, and failed payments.\n- List of recent payment transactions (with associated student and application details)."
+						"description": "Retrieve general dashboard statistics and recent payment records for administrators. Supports sorting, filtering, searching, and custom pagination.\n\n### Returns:\n- Aggregate Stats (summarizing the filtered results, not just the page limit).\n- Paginated list of payments (with student and application info).\n- Custom `pagination` block (`total`, `page`, `per_page`)."
 					},
 					"response": [
 						{
@@ -324,7 +383,7 @@
 									}
 								],
 								"url": {
-									"raw": "{{baseUrl}}/payments/admin",
+									"raw": "{{baseUrl}}/payments/admin?search=&status=&min_amount=&max_amount=&start_date=&end_date=&sort_by=&sort_order=&page=1&per_page=10",
 									"host": [
 										"{{baseUrl}}"
 									],
@@ -344,7 +403,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"status\": true,\n    \"stats\": {\n        \"total_revenue\": 2500,\n        \"total_paid_count\": 2,\n        \"total_pending_count\": 1,\n        \"total_failed_count\": 0\n    },\n    \"recent_payments\": [\n        {\n            \"id\": 1,\n            \"application_id\": 1,\n            \"amount\": 1000,\n            \"status\": \"paid\",\n            \"transaction_id\": \"123456789\",\n            \"paid_at\": \"2026-05-30T12:00:00.000000Z\",\n            \"application\": {\n                \"id\": 1,\n                \"title\": \"Clinical Ethics Research Protocol\",\n                \"student\": {\n                    \"id\": 2,\n                    \"name\": \"Student User\",\n                    \"email\": \"student@example.com\"\n                }\n            }\n        }\n    ]\n}"
+							"body": "{\n    \"status\": true,\n    \"message\": \"All payments retrieved.\",\n    \"data\": {\n        \"payments\": [\n            {\n                \"id\": 1,\n                \"application_id\": 1,\n                \"amount\": 1000,\n                \"status\": \"completed\",\n                \"transaction_id\": \"123456789\",\n                \"paid_at\": \"2026-05-30T12:00:00.000000Z\",\n                \"application\": {\n                    \"id\": 1,\n                    \"title\": \"Clinical Ethics Research Protocol\",\n                    \"student\": {\n                        \"id\": 2,\n                        \"name\": \"Student User\",\n                        \"email\": \"student@example.com\"\n                    }\n                }\n            }\n        ],\n        \"stats\": {\n            \"total_revenue\": 1000,\n            \"completed_count\": 1,\n            \"pending_count\": 0,\n            \"failed_count\": 0\n        }\n    },\n    \"pagination\": {\n        \"total\": 1,\n        \"page\": 1,\n        \"per_page\": 10\n    }\n}"
 						}
 					]
 				}
@@ -365,16 +424,69 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/payments/pending",
+							"raw": "{{baseUrl}}/payments/pending?search=&min_amount=&max_amount=&start_date=&end_date=&sort_by=&sort_order=&page=1&per_page=10",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"payments",
 								"pending"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search by application title, serial number, or ID"
+								},
+								{
+									"key": "min_amount",
+									"value": "",
+									"description": "Filter by minimum EGP fee amount",
+									"disabled": true
+								},
+								{
+									"key": "max_amount",
+									"value": "",
+									"description": "Filter by maximum EGP fee amount",
+									"disabled": true
+								},
+								{
+									"key": "start_date",
+									"value": "",
+									"description": "Filter requests created on/after date (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "end_date",
+									"value": "",
+									"description": "Filter requests created on/before date (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "sort_by",
+									"value": "",
+									"description": "Sort field: created_at, amount",
+									"disabled": true
+								},
+								{
+									"key": "sort_order",
+									"value": "",
+									"description": "Sort order: asc, desc",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Current page number"
+								},
+								{
+									"key": "per_page",
+									"value": "10",
+									"description": "Records to show per page"
+								}
 							]
 						},
-						"description": "Fetch all pending payment requests for the currently logged-in student. The student uses this to find what payments they need to complete."
+						"description": "Fetch all pending payment requests for the currently logged-in student. Supports sorting, filtering, searching, and custom pagination."
 					},
 					"response": [
 						{
@@ -388,7 +500,7 @@
 									}
 								],
 								"url": {
-									"raw": "{{baseUrl}}/payments/pending",
+									"raw": "{{baseUrl}}/payments/pending?search=&min_amount=&max_amount=&start_date=&end_date=&sort_by=&sort_order=&page=1&per_page=10",
 									"host": [
 										"{{baseUrl}}"
 									],
@@ -408,7 +520,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"status\": true,\n    \"payments\": [\n        {\n            \"id\": 3,\n            \"application_id\": 12,\n            \"amount\": 1500,\n            \"status\": \"pending\",\n            \"client_secret\": null,\n            \"created_at\": \"2026-05-30T15:02:00.000000Z\",\n            \"application\": {\n                \"id\": 12,\n                \"title\": \"Clinical Ethics Research Protocol\",\n                \"current_stage\": \"awaiting_payment\"\n            }\n        }\n    ]\n}"
+							"body": "{\n    \"status\": true,\n    \"message\": \"Pending payments retrieved.\",\n    \"data\": [\n        {\n            \"application_id\": 12,\n            \"serial_number\": \"IRB-2026-012\",\n            \"title\": \"Clinical Ethics Research Protocol\",\n            \"current_stage\": \"awaiting_payment\",\n            \"amount\": 1500,\n            \"payment_id\": 3\n        }\n    ],\n    \"pagination\": {\n        \"total\": 1,\n        \"page\": 1,\n        \"per_page\": 10\n    }\n}"
 						}
 					]
 				},
@@ -424,16 +536,75 @@
 							}
 						],
 						"url": {
-							"raw": "{{baseUrl}}/payments/history",
+							"raw": "{{baseUrl}}/payments/history?search=&status=&min_amount=&max_amount=&start_date=&end_date=&sort_by=&sort_order=&page=1&per_page=10",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"payments",
 								"history"
+							],
+							"query": [
+								{
+									"key": "search",
+									"value": "",
+									"description": "Search by title, serial, or transaction ID"
+								},
+								{
+									"key": "status",
+									"value": "",
+									"description": "Filter by payment status (completed, failed)",
+									"disabled": true
+								},
+								{
+									"key": "min_amount",
+									"value": "",
+									"description": "Filter by minimum EGP fee amount",
+									"disabled": true
+								},
+								{
+									"key": "max_amount",
+									"value": "",
+									"description": "Filter by maximum EGP fee amount",
+									"disabled": true
+								},
+								{
+									"key": "start_date",
+									"value": "",
+									"description": "Filter payments created on/after date (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "end_date",
+									"value": "",
+									"description": "Filter payments created on/before date (YYYY-MM-DD)",
+									"disabled": true
+								},
+								{
+									"key": "sort_by",
+									"value": "",
+									"description": "Sort field: created_at, paid_at, amount",
+									"disabled": true
+								},
+								{
+									"key": "sort_order",
+									"value": "",
+									"description": "Sort order: asc, desc",
+									"disabled": true
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Current page number"
+								},
+								{
+									"key": "per_page",
+									"value": "10",
+									"description": "Records to show per page"
+								}
 							]
 						},
-						"description": "Fetch all successfully completed (`paid`) payment history for the logged-in student."
+						"description": "Fetch all successfully completed (`paid`) payment history for the logged-in student. Supports sorting, filtering, searching, and custom pagination."
 					},
 					"response": [
 						{
@@ -447,7 +618,7 @@
 									}
 								],
 								"url": {
-									"raw": "{{baseUrl}}/payments/history",
+									"raw": "{{baseUrl}}/payments/history?search=&status=&min_amount=&max_amount=&start_date=&end_date=&sort_by=&sort_order=&page=1&per_page=10",
 									"host": [
 										"{{baseUrl}}"
 									],
@@ -467,7 +638,7 @@
 								}
 							],
 							"cookie": [],
-							"body": "{\n    \"status\": true,\n    \"payments\": [\n        {\n            \"id\": 1,\n            \"application_id\": 2,\n            \"amount\": 1000,\n            \"status\": \"paid\",\n            \"transaction_id\": \"123456789\",\n            \"paid_at\": \"2026-05-30T12:00:00.000000Z\",\n            \"created_at\": \"2026-05-30T11:30:00.000000Z\",\n            \"application\": {\n                \"id\": 2,\n                \"title\": \"Behavioral Study of Tech Dependency\",\n                \"current_stage\": \"approved\"\n            }\n        }\n    ]\n}"
+							"body": "{\n    \"status\": true,\n    \"message\": \"Payment history retrieved.\",\n    \"data\": [\n        {\n            \"id\": 1,\n            \"application_id\": 2,\n            \"amount\": 1000,\n            \"status\": \"completed\",\n            \"transaction_id\": \"123456789\",\n            \"paid_at\": \"2026-05-30T12:00:00.000000Z\",\n            \"created_at\": \"2026-05-30T11:30:00.000000Z\",\n            \"application\": {\n                \"id\": 2,\n                \"title\": \"Behavioral Study of Tech Dependency\",\n                \"current_stage\": \"approved\"\n            }\n        }\n    ],\n    \"pagination\": {\n        \"total\": 1,\n        \"page\": 1,\n        \"per_page\": 10\n    }\n}"
 						}
 					]
 				},
@@ -619,7 +790,7 @@
 									"variable": [
 										{
 											"key": "clientSecret",
-											"value": "{{clientSecret}}"
+											"value": "cs_live_sometokenhere..."
 										}
 									]
 								}
@@ -659,7 +830,7 @@
 									"variable": [
 										{
 											"key": "clientSecret",
-											"value": "{{clientSecret}}"
+											"value": "cs_live_pendingtoken..."
 										}
 									]
 								}

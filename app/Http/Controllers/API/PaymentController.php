@@ -124,15 +124,16 @@ class PaymentController extends Controller
     /**
      * Get the logged-in student's applications awaiting payment.
      */
-    public function pendingPayments(): JsonResponse
+    public function pendingPayments(Request $request): JsonResponse
     {
         $studentId = auth()->id();
-        $pending = $this->paymentService->getPendingPayments($studentId);
+        $result = $this->paymentService->getPendingPayments($studentId, $request->all());
 
         return response()->json([
-            'status'  => true,
-            'message' => 'Pending payments retrieved.',
-            'data'    => $pending,
+            'status'     => true,
+            'message'    => 'Pending payments retrieved.',
+            'data'       => $result['data'],
+            'pagination' => $result['pagination'],
         ], 200);
     }
 
@@ -141,15 +142,16 @@ class PaymentController extends Controller
     /**
      * Get the logged-in student's full payment history.
      */
-    public function history(): JsonResponse
+    public function history(Request $request): JsonResponse
     {
         $studentId = auth()->id();
-        $history = $this->paymentService->getPaymentHistory($studentId);
+        $result = $this->paymentService->getPaymentHistory($studentId, $request->all());
 
         return response()->json([
-            'status'  => true,
-            'message' => 'Payment history retrieved.',
-            'data'    => $history,
+            'status'     => true,
+            'message'    => 'Payment history retrieved.',
+            'data'       => $result['data'],
+            'pagination' => $result['pagination'],
         ], 200);
     }
 
@@ -158,14 +160,18 @@ class PaymentController extends Controller
     /**
      * Admin/manager dashboard: all payments with student info and aggregate stats.
      */
-    public function adminIndex(): JsonResponse
+    public function adminIndex(Request $request): JsonResponse
     {
-        $result = $this->paymentService->getAllPaymentsWithStats();
+        $result = $this->paymentService->getAllPaymentsWithStats($request->all());
 
         return response()->json([
-            'status'  => true,
-            'message' => 'All payments retrieved.',
-            'data'    => $result,
+            'status'     => true,
+            'message'    => 'All payments retrieved.',
+            'data'       => [
+                'payments' => $result['payments'],
+                'stats'    => $result['stats'],
+            ],
+            'pagination' => $result['pagination'],
         ], 200);
     }
 
