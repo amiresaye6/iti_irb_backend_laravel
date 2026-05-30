@@ -5,6 +5,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\ApplicationController;
 use App\Http\Controllers\API\DocumentController;
+use App\Http\Controllers\API\ReviewController;
+use App\Http\Controllers\API\NotificationController;
+
+
+
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -41,7 +46,11 @@ Route::middleware('auth:sanctum')->prefix('Documents')->group(function () {
     Route::delete('/{id}', [DocumentController::class, 'destroy']);
 });
 
+
+
 Route::middleware('auth:sanctum')->group(function () {
+
+    
 
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/profile', [UserController::class, 'show']);
@@ -63,5 +72,32 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/super-admin/users',  [SuperAdminController::class, 'index']);
     });
 
+    // ─── REVIEWS ROUTES ───
+    
+    // Reviewer only
+    Route::middleware('role:reviewer')->prefix('reviewer')->group(function () {
+        Route::get('/dashboard', [ReviewController::class, 'getDashboardKPIs']);
+        Route::get('/pending-researches', [ReviewController::class, 'getPendingResearches']);
+        Route::get('/pending-assignments', [ReviewController::class, 'getPendingAssignments']);
+        Route::get('/active-assignments', [ReviewController::class, 'getActiveAssignments']);
+        Route::get('/history', [ReviewController::class, 'getAssignmentHistory']);
+        Route::get('/reviews/{applicationId}', [ReviewController::class, 'getReviewDetails']);
+        Route::post('/assignments/{reviewId}/accept', [ReviewController::class, 'acceptAssignment']);
+        Route::post('/assignments/{reviewId}/refuse', [ReviewController::class, 'refuseAssignment']);
+        Route::post('/reviews/{applicationId}/submit', [ReviewController::class, 'submitDecision']);
+    });
+
+    // Admin/Manager assigning reviewers
+    Route::middleware('role:admin,manager')->prefix('admin/reviews')->group(function () {
+        Route::get('/under-review', [ReviewController::class, 'getApplicationsUnderReview']);
+        Route::get('/available-reviewers', [ReviewController::class, 'getAvailableReviewers']);
+        Route::post('/assign/{applicationId}', [ReviewController::class, 'assignReviewer']);
+        Route::get('/all', [ReviewController::class, 'getAllSystemReviews']);
+    });
+
+    // ─── NOTIFICATIONS ROUTES ───
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+    Route::get('/notifications/{id}', [NotificationController::class, 'show']);
 
 });
