@@ -5,6 +5,10 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\ApplicationController;
 use App\Http\Controllers\API\DocumentController;
+use App\Http\Controllers\API\ManagerController;
+use App\Http\Controllers\API\CertificateController;
+use App\Http\Controllers\API\SuperAdminController;
+
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -57,7 +61,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/users/{id}/activate', [UserController::class, 'activate']);
         Route::post('/admin/add_staff',[AuthController::class, 'register']);
         Route::get('/pending_users', [UserController::class, 'showPendingUsers']);
-    
+
     });
 
     // Super Admin only
@@ -66,4 +70,20 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
 
+});
+
+// manager routes
+
+Route::middleware(['auth:sanctum'])->prefix('manager')->group(function () {
+    Route::get('/dashboard', [ManagerController::class, 'dashboard']);
+    Route::get('/final-approvals', [ManagerController::class, 'finalApprovals']);
+    Route::get('/decisions/{id}', [ManagerController::class, 'decisionDetails']);
+    Route::post('/decisions/{id}/process', [ManagerController::class, 'processDecision']);
+    Route::get('/reports-statistics', [ManagerController::class, 'reportsStatistics']);
+    Route::get('/staff/certificates/{application_id}/download', [CertificateController::class, 'downloadForStaff']);
+    Route::get('/certificates/{application_id}', [ManagerController::class, 'getCertificateDetails']);
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/student/certificates/{application_id}/preview', [CertificateController::class, 'preview']);
 });
