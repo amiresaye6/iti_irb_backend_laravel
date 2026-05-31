@@ -5,6 +5,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\ApplicationController;
 use App\Http\Controllers\API\DocumentController;
+use App\Http\Controllers\API\ManagerController;
+use App\Http\Controllers\API\CertificateController;
+
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -35,4 +38,20 @@ Route::middleware('auth:sanctum')->prefix('applications')->group(function () {
 Route::middleware('auth:sanctum')->prefix('Documents')->group(function () {
     Route::get('/{id}', [DocumentController::class, 'show']);
     Route::delete('/{id}', [DocumentController::class, 'destroy']);
+});
+
+// manager routes
+
+Route::middleware(['auth:sanctum'])->prefix('manager')->group(function () {
+    Route::get('/dashboard', [ManagerController::class, 'dashboard']);
+    Route::get('/final-approvals', [ManagerController::class, 'finalApprovals']);
+    Route::get('/decisions/{id}', [ManagerController::class, 'decisionDetails']);
+    Route::post('/decisions/{id}/process', [ManagerController::class, 'processDecision']);
+    Route::get('/reports-statistics', [ManagerController::class, 'reportsStatistics']);
+    Route::get('/staff/certificates/{application_id}/download', [CertificateController::class, 'downloadForStaff']);
+    Route::get('/certificates/{application_id}', [ManagerController::class, 'getCertificateDetails']);
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/student/certificates/{application_id}/preview', [CertificateController::class, 'preview']);
 });
