@@ -133,5 +133,18 @@ class ApplicationController extends Controller
         return response()->json($applications, 200);
     }
 
+    // ask for modifications
+    public function askForModification($appId){
+        $application = $this->applicationService->toggle_needsModification($appId);
+        // logs and notifications logic
+        return response()->json($application, 200);
+    }
+
+    // ask for review again after modifications from student
+    public function askForReview_afterModifications($appId){
+        $application = $this->applicationService->toggle_needsModification($appId);
+        // logs and notifications logic
+        return response()->json($application, 200);
+    }
 
 }

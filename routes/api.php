@@ -9,6 +9,9 @@ use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\NotificationController;
 
 
+use App\Http\Controllers\API\ManagerController;
+use App\Http\Controllers\API\CertificateController;
+use App\Http\Controllers\API\SuperAdminController;
 
 
 Route::get('/user', function (Request $request) {
@@ -38,6 +41,8 @@ Route::middleware('auth:sanctum')->prefix('applications')->group(function () {
     Route::patch('/{id}', [ApplicationController::class, 'edit'])->middleware('role:student');
     Route::post('/{id}', [ApplicationController::class, 'toNextStage'])->middleware('role:admin,reviewer,manager');
     Route::get('/{id}/Docs', [DocumentController::class, 'getDocsByAppId']);
+    Route::post('/{id}/ask-for-modification', [ApplicationController::class, 'askForModification'])->middleware('role:admin,reviewer,manager');
+    Route::post('/{id}/ask-for-review', [ApplicationController::class, 'askForReview_afterModifications'])->middleware('role:student');
 });
 
 // Documents routes
@@ -64,7 +69,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/users/{id}/activate', [UserController::class, 'activate']);
         Route::post('/admin/add_staff',[AuthController::class, 'register']);
         Route::get('/pending_users', [UserController::class, 'showPendingUsers']);
-    
+
     });
 
     // Super Admin only
@@ -100,4 +105,20 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
     Route::get('/notifications/{id}', [NotificationController::class, 'show']);
 
+});
+
+// manager routes
+
+Route::middleware(['auth:sanctum'])->prefix('manager')->group(function () {
+    Route::get('/dashboard', [ManagerController::class, 'dashboard']);
+    Route::get('/final-approvals', [ManagerController::class, 'finalApprovals']);
+    Route::get('/decisions/{id}', [ManagerController::class, 'decisionDetails']);
+    Route::post('/decisions/{id}/process', [ManagerController::class, 'processDecision']);
+    Route::get('/reports-statistics', [ManagerController::class, 'reportsStatistics']);
+    Route::get('/staff/certificates/{application_id}/download', [CertificateController::class, 'downloadForStaff']);
+    Route::get('/certificates/{application_id}', [ManagerController::class, 'getCertificateDetails']);
+});
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    Route::get('/student/certificates/{application_id}/preview', [CertificateController::class, 'preview']);
 });
