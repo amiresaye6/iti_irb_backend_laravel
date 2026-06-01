@@ -184,11 +184,11 @@
 								{
 									"key": "applicationId",
 									"value": "12",
-									"description": "ID of the application in approved_by_reviewer stage to set the fee for"
+									"description": "ID of the application in final_review stage to set the fee for"
 								}
 							]
 						},
-						"description": "Set the required fee for an application after its final reviewer approval.\n\n### Business Rules:\n1. If `amount` is set to `0`:\n   - Skips the payment stage entirely and advances application directly to `approved`.\n   - Generates a pseudo-payment record marked as `paid` with transaction ID `ZERO_FEES`.\n2. If `amount` is `> 0`:\n   - Creates a pending payment record.\n   - Changes application status to `awaiting_payment` so the student can checkout.\n\n### Requirements:\n- Must be logged in as `admin` or `manager`.\n- The application must be in the `approved_by_reviewer` stage."
+						"description": "Set the required fee for an application after its final reviewer approval.\n\n### Business Rules:\n1. If `amount` is set to `0`:\n   - Skips the payment stage entirely and advances application directly to `approved`.\n   - Generates a pseudo-payment record marked as `paid` with transaction ID `ZERO_FEES`.\n2. If `amount` is `> 0`:\n   - Creates a pending payment record.\n   - Changes application status to `awaiting_payment` so the student can checkout.\n\n### Requirements:\n- Must be logged in as `admin` or `manager`.\n- The application must be in the `final_review` stage."
 					},
 					"response": [
 						{
