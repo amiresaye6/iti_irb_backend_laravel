@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+    'paymob' => [
+        'secret_key'      => env('PAYMOB_SECRET_KEY'),
+        'public_key'      => env('PAYMOB_PUBLIC_KEY'),
+        'hmac_secret'     => env('PAYMOB_HMAC_SECRET'),
+        'payment_methods' => env('PAYMOB_PAYMENT_METHODS', ''),
+        'redirect_url'    => env('PAYMOB_REDIRECT_URL', ''),
+        'base_url'        => 'https://accept.paymob.com/v1/intention/',
+    ],
+
 ];

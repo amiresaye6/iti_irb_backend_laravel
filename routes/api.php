@@ -13,6 +13,7 @@ use App\Http\Controllers\API\ManagerController;
 use App\Http\Controllers\API\CertificateController;
 use App\Http\Controllers\API\SuperAdminController;
 
+use App\Http\Controllers\API\PaymentController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -51,7 +52,32 @@ Route::middleware('auth:sanctum')->prefix('Documents')->group(function () {
     Route::delete('/{id}', [DocumentController::class, 'destroy']);
 });
 
+// ─── Payment Routes ─────────────────────────────────────────────
+// Paymob webhook (no auth — verified via HMAC)
+Route::post('/payments/callback', [PaymentController::class, 'callback']);
 
+// Authenticated payment routes
+Route::middleware('auth:sanctum')->prefix('payments')->group(function () {
+    // Admin/Manager: set fee & dashboard
+    Route::post('/set-fee/{applicationId}', [PaymentController::class, 'setFee'])
+        ->middleware('role:admin,manager');
+    Route::get('/admin', [PaymentController::class, 'adminIndex'])
+        ->middleware('role:admin,manager');
+
+    // Student: checkout, pending, history, verify
+    Route::post('/checkout/{applicationId}', [PaymentController::class, 'checkout'])
+        ->middleware('role:student');
+    Route::get('/pending', [PaymentController::class, 'pendingPayments'])
+        ->middleware('role:student');
+    Route::get('/history', [PaymentController::class, 'history'])
+        ->middleware('role:student');
+    Route::get('/verify/{clientSecret}', [PaymentController::class, 'verify'])
+        ->middleware('role:student');
+
+    // Shared: receipt
+    Route::get('/{paymentId}/receipt', [PaymentController::class, 'receipt'])
+        ->middleware('role:student,admin,manager');
+});
 
 Route::middleware('auth:sanctum')->group(function () {
 
