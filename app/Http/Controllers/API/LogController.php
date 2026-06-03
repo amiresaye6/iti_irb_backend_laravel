@@ -59,4 +59,8 @@ class LogController extends Controller
         return response()->json($this->logService->getLogsByType('auth'), 200);
     }
 
+    public function getModifyApplicationLogs()
+    {
+        return response()->json($this->logService->getLogsByType('modify_application'), 200);
+    }
 }

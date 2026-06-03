@@ -13,10 +13,13 @@ class LogsService {
     }
 
     public function store($application_id, $user_id, $action, $type){
+        if(!in_array($type, ['submission','assignment','status_change','certificate','decision','auth','modify_application','other'])){
+            $type = 'other';
+        }
         return Log::create([
             'application_id' => $application_id,
             'user_id' => $user_id??auth()->id(),
-            'action' => $action??'no action provided',
+            'action' => $action??'معلومة غير متوفرة',
             'type' => $type??'other',
         ]);
     }
