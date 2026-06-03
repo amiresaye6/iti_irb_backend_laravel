@@ -65,6 +65,9 @@ class ApplicationController extends Controller
             $this->documentationService->store($file, $key, $app_id);
         }
 
+        $application = $this->applicationService->toggle_needsModification($app_id);
+
+
         return response()->json(['message' => 'Documents updated successfully.'], 200);
     }
 

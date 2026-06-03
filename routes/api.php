@@ -7,7 +7,7 @@ use App\Http\Controllers\API\ApplicationController;
 use App\Http\Controllers\API\DocumentController;
 use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\NotificationController;
-
+use App\Http\Controllers\API\LogController;
 
 use App\Http\Controllers\API\ManagerController;
 use App\Http\Controllers\API\CertificateController;
@@ -147,4 +147,18 @@ Route::middleware(['auth:sanctum'])->prefix('manager')->group(function () {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/student/certificates/{application_id}/preview', [CertificateController::class, 'preview']);
+});
+
+
+// logs routes
+Route::middleware('auth:sanctum')->prefix('logs')->group(function () {
+    Route::get('/', [LogController::class, 'index']);
+    Route::get('/application/{app_id}', [LogController::class, 'getLogsByAppId']);
+    Route::get('/user/{user_id}', [LogController::class, 'getLogsByUserId']);
+    Route::get('/type/{type}', [LogController::class, 'getLogsByType']);
+    Route::get('/submission', [LogController::class, 'getSubmissionLogs']);
+    Route::get('/assignment', [LogController::class, 'getAssignmentLogs']);
+    Route::get('/decision', [LogController::class, 'getDecisionLogs']);
+    Route::get('/status-change', [LogController::class, 'getStatusChangeLogs']);
+    Route::get('/auth', [LogController::class, 'getAuthLogs']);
 });

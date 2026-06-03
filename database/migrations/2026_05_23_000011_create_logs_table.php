@@ -11,10 +11,13 @@ return new class extends Migration
         Schema::create('logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('application_id')->nullable()->constrained('applications')->nullOnDelete();
-            $table->foreignId('user_id')->nullable()->constrained('users');
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('action', 255)->nullable();
-            $table->string('type', 50)->nullable();
+            $table->enum('type',['submission','assignment','status_change','certificate','decision','auth','other']);
             $table->timestamp('created_at')->useCurrent();
+
+            $table->index('application_id');
+            $table->index('user_id');
         });
     }
 
