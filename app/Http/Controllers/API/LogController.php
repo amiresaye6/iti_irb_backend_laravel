@@ -63,4 +63,9 @@ class LogController extends Controller
     {
         return response()->json($this->logService->getLogsByType('modify_application'), 200);
     }
+
+    public function getLogsBySerialNumber($serial_number)
+    {
+        return response()->json($this->logService->getLogsBySerialNumber($serial_number), 200);
+    }
 }

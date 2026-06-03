@@ -21,6 +21,11 @@ return new class extends Migration
         });
     }
 
+    public function application()
+    {
+        return $this->belongsTo(Application::class, 'application_id');
+    }
+    
     public function down(): void
     {
         Schema::dropIfExists('logs');

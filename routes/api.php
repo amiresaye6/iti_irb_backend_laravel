@@ -152,13 +152,14 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
 // logs routes
 Route::middleware('auth:sanctum')->prefix('logs')->group(function () {
-    Route::get('/', [LogController::class, 'index']);
-    Route::get('/application/{app_id}', [LogController::class, 'getLogsByAppId']);
-    Route::get('/user/{user_id}', [LogController::class, 'getLogsByUserId']);
-    Route::get('/type/{type}', [LogController::class, 'getLogsByType']);
-    Route::get('/submission', [LogController::class, 'getSubmissionLogs']);
-    Route::get('/assignment', [LogController::class, 'getAssignmentLogs']);
-    Route::get('/decision', [LogController::class, 'getDecisionLogs']);
-    Route::get('/status-change', [LogController::class, 'getStatusChangeLogs']);
-    Route::get('/auth', [LogController::class, 'getAuthLogs']);
+    Route::get('/', [LogController::class, 'index'])->middleware('role:admin,manager,super_admin');
+    Route::get('/application/{app_id}', [LogController::class, 'getLogsByAppId'])->middleware('role:admin,manager,super_admin');
+    Route::get('/user/{user_id}', [LogController::class, 'getLogsByUserId'])->middleware('role:admin,manager,super_admin');
+    Route::get('/type/{type}', [LogController::class, 'getLogsByType'])->middleware('role:admin,manager,super_admin');
+    Route::get('/submission', [LogController::class, 'getSubmissionLogs'])->middleware('role:admin,manager,super_admin');
+    Route::get('/assignment', [LogController::class, 'getAssignmentLogs'])->middleware('role:admin,manager,super_admin');
+    Route::get('/decision', [LogController::class, 'getDecisionLogs'])->middleware('role:admin,manager,super_admin');
+    Route::get('/status-change', [LogController::class, 'getStatusChangeLogs'])->middleware('role:admin,manager,super_admin');
+    Route::get('/auth', [LogController::class, 'getAuthLogs'])->middleware('role:admin,manager,super_admin');
+    Route::get('/serial-number/{serial_number}', [LogController::class, 'getLogsBySerialNumber'])->middleware('role:admin,manager,super_admin');
 });

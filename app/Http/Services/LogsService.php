@@ -36,4 +36,10 @@ class LogsService {
         return Log::where('type', $type)->latest()->paginate(15);
     }
 
+    public function getLogsBySerialNumber($serial_number){
+        return Log::whereHas('application', function($query) use ($serial_number){
+            $query->where('serial_number', $serial_number);
+        })->latest()->paginate(15);
+    }
+
 }
