@@ -9,11 +9,12 @@ use Illuminate\Support\Facades\Storage;
 
 class LogsService {
     public function index(){
-        return Log::latest()->paginate(15);
+        return Log::with(['application', 'user'])->latest()->paginate(20);
+        //return Log::latest()->paginate(15);
     }
 
     public function store($application_id, $user_id, $action, $type){
-        if(!in_array($type, ['submission','assignment','status_change','certificate','decision','auth','modify_application','other'])){
+        if(!in_array($type, ['submission','assignment','status_change','certificate','decision','auth','modify_application','payment','other'])){
             $type = 'other';
         }
         return Log::create([
@@ -25,21 +26,22 @@ class LogsService {
     }
 
     public function getLogsByAppId($app_id){
-        return Log::where('application_id', $app_id)->get();
+        //with application and user
+        return Log::with(['application', 'user'])->where('application_id', $app_id)->get();
     }
 
     public function getLogsByUserId($user_id){
-        return Log::where('user_id', $user_id)->latest()->paginate(15);
+        return Log::with(['application', 'user'])->where('user_id', $user_id)->latest()->paginate(20);
     }
 
     public function getLogsByType($type){
-        return Log::where('type', $type)->latest()->paginate(15);
+        return Log::with(['application', 'user'])->where('type', $type)->latest()->paginate(20);
     }
 
     public function getLogsBySerialNumber($serial_number){
-        return Log::whereHas('application', function($query) use ($serial_number){
+        return Log::with(['application', 'user'])->whereHas('application', function($query) use ($serial_number){
             $query->where('serial_number', $serial_number);
-        })->latest()->paginate(15);
+        })->latest()->paginate(20);
     }
 
 }

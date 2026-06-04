@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('application_id')->nullable()->constrained('applications')->nullOnDelete();
             $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('action', 255)->nullable();
-            $table->enum('type',['submission','assignment','status_change','certificate','decision','auth','modify_application','other']);
+            $table->enum('type',['submission','assignment','status_change','certificate','decision','auth','modify_application','payment','other']);
             $table->timestamp('created_at')->useCurrent();
 
             $table->index('application_id');
@@ -24,6 +24,11 @@ return new class extends Migration
     public function application()
     {
         return $this->belongsTo(Application::class, 'application_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
     
     public function down(): void
