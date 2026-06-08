@@ -36,7 +36,7 @@ class RegisterRequest extends FormRequest
             
             'national_id'  => ['required', 'string', 'regex:/^[0-9]{14}$/', 'unique:users,national_id'], 
             
-            'phone_number' => ['required', 'string', 'max:20'],
+            'phone_number' => ['required', 'string', 'size:11', 'regex:/^01[0125][0-9]{8}$/'],
             'faculty'      => ['required', 'string', 'max:255'],
             'department'   => ['required_if:role,student', 'string', 'max:255'],
             
@@ -59,6 +59,9 @@ class RegisterRequest extends FormRequest
             'id_back.mimes'    => 'صورة ظهر البطاقة يجب أن تكون JPG أو PNG فقط',
             'id_front.required'=> 'صورة وجه البطاقة مطلوبة',
             'id_back.required' => 'صورة ظهر البطاقة مطلوبة',
+            'phone_number.required' => 'رقم الهاتف مطلوب',
+            'phone_number.regex' => 'رقم الهاتف غير صالح، يجب أن يبدأ بـ 010 أو 011 أو 012 أو 015 ويحتوي على 11 رقم',
+            'phone_number.size' => 'رقم الهاتف يجب أن يكون 11 أرقام',
         ];
     }
 }
