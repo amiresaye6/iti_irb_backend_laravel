@@ -52,11 +52,24 @@ class ManagerController extends Controller
         $this->authorizeManager($request);
 
         $request->validate([
-            'action' => 'required|in:approve,return'
+            'decision' => 'required|in:approved,rejected,needs_modification',
+            'notes'    => 'nullable|string'
         ]);
 
         try {
-            $result = $this->managerService->processDecision($id, $request->action, $request->user()->id);
+            $result = $this->managerService->processDecision(
+                $id,
+                $request->decision,
+                $request->notes,
+                $request->user()->id
+            );
+
+            if ($request->decision === 'approved') {
+                $result['action'] = 'redirect_payment';
+            } else {
+                $result['action'] = 'redirect_dashboard';
+            }
+
             return response()->json($result);
         } catch (\Exception $e) {
             return response()->json(['status' => 'error', 'message' => $e->getMessage()], 400);
