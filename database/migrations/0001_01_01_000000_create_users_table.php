@@ -10,14 +10,14 @@ return new class extends Migration
     {
         Schema::create('users', function (Blueprint $table) {
             $table->id();
-            $table->enum('role', ['student','admin','sample_officer','reviewer','manager','super_admin'])->default('student');
+            $table->enum('role', ['student','admin','reviewer','manager','super_admin'])->default('student');
             $table->string('full_name', 255);
             $table->string('email', 255)->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password', 255);
             $table->rememberToken();
-            $table->string('national_id', 20);
-            $table->string('phone_number', 20);
+            $table->string('national_id', 14)->unique();
+            $table->string('phone_number', 11);
             $table->string('faculty', 150);
             $table->string('department', 150)->nullable();;
             $table->string('id_front_url', 255)->nullable();

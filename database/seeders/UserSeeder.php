@@ -21,8 +21,8 @@ class UserSeeder extends Seeder
 
 <<<<<<< Updated upstream
             // Sample Officers (IDs 6-7)
-            ['role' => 'sample_officer', 'full_name' => 'م. حسام (الإحصاء الطبي)', 'email' => 'sample1@irb.edu', 'password' => 'password', 'national_id' => '27001011234006', 'phone_number' => '01212345678', 'faculty' => '', 'department' => '', 'id_front_url' => '', 'id_back_url' => '', 'is_active' => true],
-            ['role' => 'sample_officer', 'full_name' => 'م. رشا (مسؤول عينات)', 'email' => 'sample2@irb.edu', 'password' => 'password', 'national_id' => '27001011234007', 'phone_number' => '01212345679', 'faculty' => '', 'department' => '', 'id_front_url' => '', 'id_back_url' => '', 'is_active' => true],
+            // ['role' => 'sample_officer', 'full_name' => 'م. حسام (الإحصاء الطبي)', 'email' => 'sample1@irb.edu', 'password' => 'password', 'national_id' => '27001011234006', 'phone_number' => '01212345678', 'faculty' => '', 'department' => '', 'id_front_url' => '', 'id_back_url' => '', 'is_active' => true],
+            // ['role' => 'sample_officer', 'full_name' => 'م. رشا (مسؤول عينات)', 'email' => 'sample2@irb.edu', 'password' => 'password', 'national_id' => '27001011234007', 'phone_number' => '01212345679', 'faculty' => '', 'department' => '', 'id_front_url' => '', 'id_back_url' => '', 'is_active' => true],
 
 =======
 >>>>>>> Stashed changes

@@ -50,31 +50,31 @@ class ApplicationService
 
             case 'pending_admin':
                 $application->current_stage = 'under_review';
-                $message = "stage updated from pending_admin to under_review";
+                $message = "تم تحديث مرحلة الطلب من المراجعة الأولية إلى قيد المراجعة";
                 break;
 
             case 'under_review':
                 $application->current_stage = 'final_review';
-                $message = "stage updated from under_review to final_review";
+                $message = "تم تحديث مرحلة الطلب من قيد المراجعة إلى المراجعة النهائية";
                 break;
 
             case 'final_review':
                 $application->current_stage = 'awaiting_payment';
-                $message = "stage updated from final_review to awaiting_payment";
+                $message = "تم تحديث مرحلة الطلب من المراجعة النهائية إلى في انتظار الدفع";
                 break;
 
             case 'awaiting_payment':
                 $application->current_stage = 'approved';
-                $message = "stage updated from awaiting_payment to approved";
+                $message = "تم تحديث مرحلة الطلب من في انتظار الدفع إلى مقبول";
                 break;
 
             case 'approved':
             case 'rejected':
-                $message = "Application is already in final stage";
+                $message = "الطلب في مرحلة نهائية ولا يمكن تحديثه";
                 break;
                 
             default:
-                $message = "Invalid current stage";
+                $message = "مرحلة حالية غير صالحة";
         }
 
         $application->save();

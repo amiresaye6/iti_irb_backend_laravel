@@ -7,7 +7,7 @@ use App\Http\Controllers\API\ApplicationController;
 use App\Http\Controllers\API\DocumentController;
 use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\NotificationController;
-
+use App\Http\Controllers\API\LogController;
 
 use App\Http\Controllers\API\ManagerController;
 use App\Http\Controllers\API\CertificateController;
@@ -147,4 +147,19 @@ Route::middleware(['auth:sanctum'])->prefix('manager')->group(function () {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/student/certificates/{application_id}/preview', [CertificateController::class, 'preview']);
+});
+
+
+// logs routes
+Route::middleware('auth:sanctum')->prefix('logs')->group(function () {
+    Route::get('/', [LogController::class, 'index'])->middleware('role:admin,manager,super_admin');
+    Route::get('/application/{app_id}', [LogController::class, 'getLogsByAppId'])->middleware('role:admin,manager,super_admin');
+    Route::get('/user/{user_id}', [LogController::class, 'getLogsByUserId'])->middleware('role:admin,manager,super_admin');
+    Route::get('/type/{type}', [LogController::class, 'getLogsByType'])->middleware('role:admin,manager,super_admin');
+    Route::get('/submission', [LogController::class, 'getSubmissionLogs'])->middleware('role:admin,manager,super_admin');
+    Route::get('/assignment', [LogController::class, 'getAssignmentLogs'])->middleware('role:admin,manager,super_admin');
+    Route::get('/decision', [LogController::class, 'getDecisionLogs'])->middleware('role:admin,manager,super_admin');
+    Route::get('/status-change', [LogController::class, 'getStatusChangeLogs'])->middleware('role:admin,manager,super_admin');
+    Route::get('/auth', [LogController::class, 'getAuthLogs'])->middleware('role:admin,manager,super_admin');
+    Route::get('/serial-number/{serial_number}', [LogController::class, 'getLogsBySerialNumber'])->middleware('role:admin,manager,super_admin');
 });

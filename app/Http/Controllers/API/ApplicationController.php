@@ -9,20 +9,21 @@ use App\Models\User;
 use App\Models\Document;
 use App\Http\Services\ApplicationService;
 use App\Http\Services\DocumentService;
+use App\Http\Services\LogsService;
 
 use App\Http\Requests\Application\StoreAppRequest;
 use App\Http\Requests\Application\EditAppRequest;
-
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ApplicationController extends Controller
 {
-    public function __construct(ApplicationService $applicationService,DocumentService $documentationService)
+    public function __construct(ApplicationService $applicationService,DocumentService $documentationService,LogsService $logsService)
     {
         $this->applicationService = $applicationService;
         $this->documentationService = $documentationService;
+        $this->logsService = $logsService;
     }
 
     // get all applications
@@ -46,6 +47,7 @@ class ApplicationController extends Controller
             $application = $this->applicationService->store($validated,$student_id);
             $application_id = $application['id'];
             $Docs = $this->documentationService->storeDocs($validated,$application_id);
+            $this->logsService->store($application_id, $student_id,'تم تقديم الطلب بنجاح ورفع المستندات', 'submission');
         }catch(Exception $ex){
             return response()->json($application, 400);
         }
@@ -65,13 +67,17 @@ class ApplicationController extends Controller
             $this->documentationService->store($file, $key, $app_id);
         }
 
-        return response()->json(['message' => 'Documents updated successfully.'], 200);
+        $application = $this->applicationService->toggle_needsModification($app_id);
+        $this->logsService->store($app_id, auth()->id(), 'تم تحديث المستندات بعد طلب التعديل', 'modify_application');
+
+        return response()->json(['message' => 'تم تحديث المستندات بنجاح.'], 200);
     }
 
     // update application's stage to the next stage
     public function toNextStage($id)
     {
         $message = $this->applicationService->toNextStage($id);
+        $this->logsService->store($id, auth()->id(), $message, 'status_change');
         return response()->json([
             'message' => $message,
         ]);
@@ -81,6 +87,7 @@ class ApplicationController extends Controller
     public function rejectApp($id)
     {
         $application = $this->applicationService->reject($id);
+        $this->logsService->store($id, auth()->id(), 'تم رفض الطلب', 'decision');
         return response()->json($application, 200);
     }
 
@@ -137,6 +144,7 @@ class ApplicationController extends Controller
     public function askForModification($appId){
         $application = $this->applicationService->toggle_needsModification($appId);
         // logs and notifications logic
+        $this->logsService->store($appId, auth()->id(), 'تم طلب تعديل على الطلب', 'decision');
         return response()->json($application, 200);
     }
 
@@ -144,6 +152,7 @@ class ApplicationController extends Controller
     public function askForReview_afterModifications($appId){
         $application = $this->applicationService->toggle_needsModification($appId);
         // logs and notifications logic
+        $this->logsService->store($appId, auth()->id(), 'تم طلب مراجعة الطلب مرة أخرى بعد التعديلات', 'decision');
         return response()->json($application, 200);
     }
 
