@@ -59,6 +59,9 @@ class RegisterRequest extends FormRequest
             'id_back.mimes'    => 'صورة ظهر البطاقة يجب أن تكون JPG أو PNG فقط',
             'id_front.required'=> 'صورة وجه البطاقة مطلوبة',
             'id_back.required' => 'صورة ظهر البطاقة مطلوبة',
+            'phone_number.required' => 'رقم الهاتف مطلوب',
+            'phone_number.regex' => 'رقم الهاتف غير صالح، يجب أن يبدأ بـ 010 أو 011 أو 012 أو 015 ويحتوي على 11 رقم',
+            'phone_number.size' => 'رقم الهاتف يجب أن يكون 11 أرقام',
         ];
     }
 }
