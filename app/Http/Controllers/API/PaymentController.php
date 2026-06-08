@@ -244,45 +244,7 @@ class PaymentController extends Controller
 
             if ($isPaid) {
                 if ($payment && $payment->status !== 'completed') {
-                    \Illuminate\Support\Facades\DB::transaction(function () use ($payment, $result) {
-                        $payment->update([
-                            'status'                 => 'completed',
-                            'gateway_transaction_id' => $result['data']['id'] ?? $payment->gateway_transaction_id,
-                            'gateway_response'       => $result['data'],
-                            'paid_at'                => now(),
-                        ]);
-
-                        // Cleanup: mark other pending attempts for same app/phase as failed
-                        \App\Models\Payment::where('application_id', $payment->application_id)
-                            ->where('phase', $payment->phase)
-                            ->where('id', '!=', $payment->id)
-                            ->where('status', 'pending')
-                            ->update(['status' => 'failed']);
-
-                        // Advance application stage to 'approved'
-                        $application = \App\Models\Application::find($payment->application_id);
-
-                        if ($application && $application->current_stage === 'awaiting_payment') {
-                            $application->current_stage = 'approved';
-                            $application->save();
-
-                            // Log
-                            \App\Models\Log::create([
-                                'application_id' => $application->id,
-                                'user_id'        => $application->student_id,
-                                'action'         => "Payment completed for [{$application->serial_number}] via verify",
-                                'type'           => 'payment',
-                            ]);
-
-                            // Notify student
-                            \App\Models\Notification::create([
-                                'user_id'        => $application->student_id,
-                                'application_id' => $application->id,
-                                'message'        => "تم تأكيد استلام رسوم طلبك رقم {$application->serial_number} بنجاح. تمت الموافقة على الطلب.",
-                                'channel'        => 'system',
-                            ]);
-                        }
-                    });
+                    $this->paymentService->completePayment($payment, $result['data']);
                 }
 
                 if ($payment) {
@@ -300,10 +262,7 @@ class PaymentController extends Controller
             } else {
                 // If it is not paid, update status to failed locally for logging, but only if it was pending
                 if ($payment && $payment->status === 'pending') {
-                    $payment->update([
-                        'status'           => 'failed',
-                        'gateway_response' => $result['data'],
-                    ]);
+                    $this->paymentService->failPayment($payment, $result['data']);
                 }
 
                 return response()->json([

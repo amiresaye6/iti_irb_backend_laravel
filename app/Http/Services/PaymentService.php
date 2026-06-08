@@ -7,6 +7,7 @@ use App\Models\Log;
 use App\Models\Notification;
 use App\Models\Payment;
 use App\Models\User;
+use App\Http\Services\LogsService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 
@@ -18,9 +19,11 @@ class PaymentService
     protected array $paymentMethods;
     protected string $redirectUrl;
     protected string $baseUrl;
+    protected LogsService $logsService;
 
-    public function __construct()
+    public function __construct(LogsService $logsService)
     {
+        $this->logsService    = $logsService;
         $this->secretKey      = config('services.paymob.secret_key');
         $this->publicKey      = config('services.paymob.public_key');
         $this->hmacSecret     = config('services.paymob.hmac_secret');
@@ -47,12 +50,12 @@ class PaymentService
                 $application->save();
 
                 // Log
-                Log::create([
-                    'application_id' => $application->id,
-                    'user_id'        => $application->student_id,
-                    'action'         => "Application [{$application->serial_number}] approved with zero fees",
-                    'type'           => 'payment',
-                ]);
+                $this->logsService->store(
+                    $application->id,
+                    $application->student_id,
+                    "تمت الموافقة على الطلب رقم [{$application->serial_number}] بدون رسوم",
+                    'payment'
+                );
 
                 // Notify student
                 Notification::create([
@@ -81,12 +84,12 @@ class PaymentService
             $application->save();
 
             // Log
-            Log::create([
-                'application_id' => $application->id,
-                'user_id'        => $application->student_id,
-                'action'         => "Payment of {$amount} EGP required for [{$application->serial_number}]",
-                'type'           => 'payment',
-            ]);
+            $this->logsService->store(
+                $application->id,
+                $application->student_id,
+                "مطلوب سداد رسوم بقيمة {$amount} ج.م للطلب رقم [{$application->serial_number}]",
+                'payment'
+            );
 
             // Notify student
             Notification::create([
@@ -256,20 +259,27 @@ class PaymentService
         }
 
         $isSuccess = ($obj['success'] ?? false) === true;
-        $newStatus  = $isSuccess ? 'completed' : 'failed';
 
-        DB::transaction(function () use ($payment, $obj, $isSuccess, $newStatus) {
-            // Update payment record
+        if (!$isSuccess) {
+            $this->failPayment($payment, $obj);
+            return;
+        }
+
+        $this->completePayment($payment, $obj);
+    }
+
+    /**
+     * Mark a payment as completed, advance application stage, log in Arabic, and notify.
+     */
+    public function completePayment(Payment $payment, array $gatewayResponse): void
+    {
+        DB::transaction(function () use ($payment, $gatewayResponse) {
             $payment->update([
-                'status'                 => $newStatus,
-                'gateway_transaction_id' => $obj['id'] ?? null,
-                'gateway_response'       => $obj,
-                'paid_at'                => $isSuccess ? now() : null,
+                'status'                 => 'completed',
+                'gateway_transaction_id' => $gatewayResponse['id'] ?? $payment->gateway_transaction_id,
+                'gateway_response'       => $gatewayResponse,
+                'paid_at'                => now(),
             ]);
-
-            if (!$isSuccess) {
-                return;
-            }
 
             // Cleanup: mark other pending attempts for same app/phase as failed
             Payment::where('application_id', $payment->application_id)
@@ -285,13 +295,13 @@ class PaymentService
                 $application->current_stage = 'approved';
                 $application->save();
 
-                // Log
-                Log::create([
-                    'application_id' => $application->id,
-                    'user_id'        => $application->student_id,
-                    'action'         => "Payment completed for [{$application->serial_number}]",
-                    'type'           => 'payment',
-                ]);
+                // Log in Arabic using LogsService
+                $this->logsService->store(
+                    $application->id,
+                    $application->student_id,
+                    "تم سداد رسوم الطلب رقم [{$application->serial_number}] بنجاح",
+                    'payment'
+                );
 
                 // Notify student
                 Notification::create([
@@ -302,6 +312,28 @@ class PaymentService
                 ]);
             }
         });
+    }
+
+    /**
+     * Mark a payment as failed, save gateway response, and log in Arabic.
+     */
+    public function failPayment(Payment $payment, array $gatewayResponse): void
+    {
+        $payment->update([
+            'status'                 => 'failed',
+            'gateway_transaction_id' => $gatewayResponse['id'] ?? $payment->gateway_transaction_id,
+            'gateway_response'       => $gatewayResponse,
+        ]);
+
+        $payment->load('application');
+
+        // Log in Arabic using LogsService
+        $this->logsService->store(
+            $payment->application_id,
+            $payment->application->student_id ?? null,
+            "فشلت عملية الدفع للطلب رقم [{$payment->application->serial_number}]",
+            'payment'
+        );
     }
 
     // ─── Query Methods ──────────────────────────────────────────────
