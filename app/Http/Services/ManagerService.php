@@ -16,7 +16,7 @@ class ManagerService
     {
         return Review::with(['application.student'])
             ->whereHas('application', function ($query) {
-                $query->where('current_stage', 'approved_by_reviewer');
+                $query->where('current_stage', 'final_review');
             })
             ->where('decision', 'approved')
             ->orderBy(
@@ -97,7 +97,7 @@ class ManagerService
         $approvedCount = Application::where('current_stage', 'approved')->count();
         $rejectedCount = Application::where('current_stage', 'rejected')->count();
         $certCount = Certificate::count();
-        $pendingCount = Application::whereIn('current_stage', ['under_review', 'approved_by_reviewer'])->count();
+        $pendingCount = Application::whereIn('current_stage', ['under_review', 'final_review'])->count();
 
         $totalApps = $approvedCount + $rejectedCount + $pendingCount;
 
