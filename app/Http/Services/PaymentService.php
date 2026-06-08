@@ -307,15 +307,18 @@ class PaymentService
     // ─── Query Methods ──────────────────────────────────────────────
 
     /**
-     * Get pending payments for a student (apps at awaiting_payment stage).
+     * Get pending payments for a student.
      */
     public function getPendingPayments(int $studentId, array $options = []): array
     {
-        $query = Payment::where('status', 'pending')
-            ->whereHas('application', function ($q) use ($studentId) {
-                $q->where('student_id', $studentId)
-                  ->where('current_stage', 'awaiting_payment');
+        $subQuery = Payment::select(DB::raw('MAX(id)'))
+            ->whereHas('application', function ($aq) use ($studentId) {
+                $aq->where('student_id', $studentId)
+                   ->where('current_stage', 'awaiting_payment');
             })
+            ->groupBy('application_id');
+
+        $query = Payment::whereIn('id', $subQuery)
             ->with('application:id,title,serial_number,current_stage');
 
         // Search

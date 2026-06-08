@@ -85,17 +85,44 @@ class PaymentController extends Controller
             ], 422);
         }
 
-        // Find the pending payment record
-        $payment = Payment::where('application_id', $applicationId)
-            ->where('status', 'pending')
-            ->latest('created_at')
+        // Find the latest payment record for this application
+        $latestPayment = Payment::where('application_id', $applicationId)
+            ->latest('id')
             ->first();
 
-        if (!$payment) {
+        if (!$latestPayment) {
             return response()->json([
                 'status'  => false,
-                'message' => 'No pending payment found for this application.',
+                'message' => 'No payment record found for this application.',
             ], 404);
+        }
+
+        // Verify stage
+        if ($latestPayment->status === 'completed') {
+            return response()->json([
+                'status'  => false,
+                'message' => 'This application has already been paid.',
+            ], 422);
+        }
+
+        $payment = $latestPayment;
+
+        // If the latest payment already has a transaction reference or is marked 'failed',
+        // we create a new payment attempt record to keep history.
+        if ($latestPayment->transaction_reference !== null || $latestPayment->status === 'failed') {
+            // Mark the old one as failed if it was still pending (e.g. abandoned attempt)
+            if ($latestPayment->status === 'pending') {
+                $latestPayment->update(['status' => 'failed']);
+            }
+
+            // Create a brand new payment record for the new attempt
+            $payment = Payment::create([
+                'application_id' => $applicationId,
+                'phase'          => $latestPayment->phase,
+                'amount'         => $latestPayment->amount,
+                'provider'       => 'Paymob',
+                'status'         => 'pending',
+            ]);
         }
 
         $result = $this->paymentService->createPaymentIntention($application, $user, $payment);
@@ -202,19 +229,92 @@ class PaymentController extends Controller
 
     // ─── Student: Verify Payment Status ─────────────────────────────
 
-    /**
-     * Check payment status via Paymob API (frontend polling after redirect).
-     */
     public function verify($clientSecret): JsonResponse
     {
         $result = $this->paymentService->getIntentionDetails($clientSecret);
 
         if ($result['success']) {
-            return response()->json([
-                'status'  => true,
-                'message' => 'Payment status retrieved.',
-                'data'    => $result,
-            ], 200);
+            $isPaid = $result['is_paid'];
+            $specialReference = $result['data']['special_reference'] ?? null;
+            
+            $payment = null;
+            if ($specialReference) {
+                $payment = \App\Models\Payment::where('transaction_reference', $specialReference)->first();
+            }
+
+            if ($isPaid) {
+                if ($payment && $payment->status !== 'completed') {
+                    \Illuminate\Support\Facades\DB::transaction(function () use ($payment, $result) {
+                        $payment->update([
+                            'status'                 => 'completed',
+                            'gateway_transaction_id' => $result['data']['id'] ?? $payment->gateway_transaction_id,
+                            'gateway_response'       => $result['data'],
+                            'paid_at'                => now(),
+                        ]);
+
+                        // Cleanup: mark other pending attempts for same app/phase as failed
+                        \App\Models\Payment::where('application_id', $payment->application_id)
+                            ->where('phase', $payment->phase)
+                            ->where('id', '!=', $payment->id)
+                            ->where('status', 'pending')
+                            ->update(['status' => 'failed']);
+
+                        // Advance application stage to 'approved'
+                        $application = \App\Models\Application::find($payment->application_id);
+
+                        if ($application && $application->current_stage === 'awaiting_payment') {
+                            $application->current_stage = 'approved';
+                            $application->save();
+
+                            // Log
+                            \App\Models\Log::create([
+                                'application_id' => $application->id,
+                                'user_id'        => $application->student_id,
+                                'action'         => "Payment completed for [{$application->serial_number}] via verify",
+                                'type'           => 'payment',
+                            ]);
+
+                            // Notify student
+                            \App\Models\Notification::create([
+                                'user_id'        => $application->student_id,
+                                'application_id' => $application->id,
+                                'message'        => "تم تأكيد استلام رسوم طلبك رقم {$application->serial_number} بنجاح. تمت الموافقة على الطلب.",
+                                'channel'        => 'system',
+                            ]);
+                        }
+                    });
+                }
+
+                if ($payment) {
+                    $payment->refresh();
+                }
+
+                return response()->json([
+                    'status' => true,
+                    'data'   => [
+                        'success'    => true,
+                        'is_paid'    => true,
+                        'payment_id' => $payment ? $payment->id : null,
+                    ],
+                ], 200);
+            } else {
+                // If it is not paid, update status to failed locally for logging, but only if it was pending
+                if ($payment && $payment->status === 'pending') {
+                    $payment->update([
+                        'status'           => 'failed',
+                        'gateway_response' => $result['data'],
+                    ]);
+                }
+
+                return response()->json([
+                    'status'  => true,
+                    'data'    => [
+                        'success' => false,
+                        'is_paid' => false,
+                    ],
+                    'message' => 'فشلت عملية الدفع',
+                ], 200);
+            }
         }
 
         return response()->json([
