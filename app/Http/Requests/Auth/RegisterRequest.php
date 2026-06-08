@@ -36,7 +36,7 @@ class RegisterRequest extends FormRequest
             
             'national_id'  => ['required', 'string', 'regex:/^[0-9]{14}$/', 'unique:users,national_id'], 
             
-            'phone_number' => ['required', 'string', 'max:20'],
+            'phone_number' => ['required', 'string', 'size:11', 'regex:/^01[0125][0-9]{8}$/'],
             'faculty'      => ['required', 'string', 'max:255'],
             'department'   => ['required_if:role,student', 'string', 'max:255'],
             
