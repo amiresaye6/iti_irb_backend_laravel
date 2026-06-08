@@ -17,7 +17,7 @@ class PaymentFactory extends Factory
     {
         return [
             'application_id' => Application::factory(),
-            'phase' => fake()->randomElement(['initial', 'sample']),
+            'phase' => 'initial',
             'amount' => fake()->randomFloat(2, 300, 1500),
             'provider' => fake()->randomElement(['Fawry', 'Paymob', 'InstaPay']),
             'transaction_reference' => fake()->unique()->bothify('??####'),

@@ -54,11 +54,6 @@ class User extends Authenticatable
         return $this->hasMany(Review::class, 'reviewer_id');
     }
 
-    public function sampleSizes()
-    {
-        return $this->hasMany(SampleSize::class, 'sampler_id');
-    }
-
     public function certificates()
     {
         return $this->hasMany(Certificate::class, 'student_id');

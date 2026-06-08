@@ -16,7 +16,6 @@ class DatabaseSeeder extends Seeder
             UserSeeder::class,
             ApplicationSeeder::class,
             CoInvestigatorSeeder::class,
-            SampleSizeSeeder::class,
             KeywordSeeder::class,
             DocumentSeeder::class,
             PaymentSeeder::class,
