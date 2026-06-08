@@ -19,13 +19,6 @@ class UserSeeder extends Seeder
             // Admin (ID 5)
             ['role' => 'admin', 'full_name' => 'أستاذ محمود (أدمن اللجان)', 'email' => 'admin@irb.edu', 'password' => 'password', 'national_id' => '28001011234005', 'phone_number' => '01112345678', 'faculty' => '', 'department' => '', 'id_front_url' => '', 'id_back_url' => '', 'is_active' => true],
 
-<<<<<<< Updated upstream
-            // Sample Officers (IDs 6-7)
-            // ['role' => 'sample_officer', 'full_name' => 'م. حسام (الإحصاء الطبي)', 'email' => 'sample1@irb.edu', 'password' => 'password', 'national_id' => '27001011234006', 'phone_number' => '01212345678', 'faculty' => '', 'department' => '', 'id_front_url' => '', 'id_back_url' => '', 'is_active' => true],
-            // ['role' => 'sample_officer', 'full_name' => 'م. رشا (مسؤول عينات)', 'email' => 'sample2@irb.edu', 'password' => 'password', 'national_id' => '27001011234007', 'phone_number' => '01212345679', 'faculty' => '', 'department' => '', 'id_front_url' => '', 'id_back_url' => '', 'is_active' => true],
-
-=======
->>>>>>> Stashed changes
             // Reviewers (IDs 8-10)
             ['role' => 'reviewer', 'full_name' => 'أ.د. خالد عبد السلام', 'email' => 'khaled.rev@irb.edu', 'password' => 'password', 'national_id' => '26001011234008', 'phone_number' => '01512345678', 'faculty' => 'كلية الطب', 'department' => 'الباطنة', 'id_front_url' => '', 'id_back_url' => '', 'is_active' => true],
             ['role' => 'reviewer', 'full_name' => 'أ.د. هدى الشربيني', 'email' => 'hoda.rev@irb.edu', 'password' => 'password', 'national_id' => '26001011234009', 'phone_number' => '01512345679', 'faculty' => 'كلية الطب', 'department' => 'الأورام', 'id_front_url' => '', 'id_back_url' => '', 'is_active' => true],
