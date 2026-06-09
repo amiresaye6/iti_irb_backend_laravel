@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\AuthController;
 use App\Http\Controllers\API\ApplicationController;
 use App\Http\Controllers\API\DocumentController;
-
+use App\Http\Controllers\API\DashboardController;
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -61,6 +61,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:super_admin')->group(function () {
         Route::get('/super-admin/users',  [SuperAdminController::class, 'index']);
     });
+    // Dashboard — Admin, Manager, Super Admin only
+    Route::prefix('dashboard')->middleware('role:admin,manager,super_admin')->group(function () {
+    Route::get('/stats',                 [DashboardController::class, 'stats']);
+    Route::get('/logs',                  [DashboardController::class, 'logs']);
+    Route::get('/applications/recent',   [DashboardController::class, 'recentApplications']);
+});
 
 
 });
