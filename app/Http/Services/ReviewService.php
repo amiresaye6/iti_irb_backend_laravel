@@ -142,7 +142,7 @@ class ReviewService
         $reviews = Review::with(['application', 'application.student'])
             ->where('reviewer_id', $reviewerId)
             ->where('assignment_status', 'accepted')
-            ->orderBy('created_at', 'desc')
+            ->orderBy('assigned_at', 'desc')
             ->get();
 
         return $this->formatAssignments($reviews);
@@ -274,8 +274,7 @@ class ReviewService
             return ['success' => true, 'message' => 'تم حفظ قرار الرفض بنجاح'];
         }
 
-        // ── ALL APPROVED: promote to manager ──────────────────────────
-        // Check if all accepted reviews for this application are 'approved'
+        //  Any APPROVED: promote to manager ──────────────────────────
         $allReviews = Review::where('application_id', $applicationId)
             ->where('assignment_status', 'accepted')
             ->get();
@@ -283,8 +282,8 @@ class ReviewService
         $total = $allReviews->count();
         $approvedCount = $allReviews->where('decision', 'approved')->count();
 
-        if ($total > 0 && $total === $approvedCount) {
-            $app->update(['current_stage' => 'approved_by_reviewer']);
+        if ($total > 0 && $approvedCount > 0) {
+            $app->update(['current_stage' => 'final_review']);
             
             $managers = User::where('role', 'manager')->get();
             $message = "تمت الموافقة على البحث رقم ({$app->serial_number}) من قبل جميع المراجعين ويحتاج لاعتمادك النهائي.";
@@ -384,5 +383,20 @@ class ReviewService
             ];
         }
         return $formatted;
+    }
+
+    /**
+     * Reviewer's assignments awaiting decision.
+     */
+    public function getAwaitingDecisionAssignments($reviewerId)
+    {
+        $reviews = Review::with(['application', 'application.student'])
+            ->where('reviewer_id', $reviewerId)
+            ->where('assignment_status', 'accepted')
+            ->whereNotIn('decision', ['approved', 'rejected'])
+            ->orderBy('assigned_at', 'desc')
+            ->get();
+
+        return $this->formatAssignments($reviews);
     }
 }
