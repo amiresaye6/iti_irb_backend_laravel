@@ -156,4 +156,9 @@ class ApplicationController extends Controller
         return response()->json($application, 200);
     }
 
+    // get comments by application id
+    public function getCommentsByApplicationId($id){
+        $comments = $this->applicationService->getCommentsByApplicationId($id);
+        return response()->json($comments, 200);
+    }    
 }
