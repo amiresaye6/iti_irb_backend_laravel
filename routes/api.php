@@ -7,12 +7,13 @@ use App\Http\Controllers\API\ApplicationController;
 use App\Http\Controllers\API\DocumentController;
 use App\Http\Controllers\API\ReviewController;
 use App\Http\Controllers\API\NotificationController;
-
+use App\Http\Controllers\API\LogController;
 
 use App\Http\Controllers\API\ManagerController;
 use App\Http\Controllers\API\CertificateController;
 use App\Http\Controllers\API\SuperAdminController;
 
+use App\Http\Controllers\API\PaymentController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -51,7 +52,32 @@ Route::middleware('auth:sanctum')->prefix('Documents')->group(function () {
     Route::delete('/{id}', [DocumentController::class, 'destroy']);
 });
 
+// ─── Payment Routes ─────────────────────────────────────────────
+// Paymob webhook (no auth — verified via HMAC)
+Route::post('/payments/callback', [PaymentController::class, 'callback']);
 
+// Authenticated payment routes
+Route::middleware('auth:sanctum')->prefix('payments')->group(function () {
+    // Admin/Manager: set fee & dashboard
+    Route::post('/set-fee/{applicationId}', [PaymentController::class, 'setFee'])
+        ->middleware('role:admin,manager');
+    Route::get('/admin', [PaymentController::class, 'adminIndex'])
+        ->middleware('role:admin,manager');
+
+    // Student: checkout, pending, history, verify
+    Route::post('/checkout/{applicationId}', [PaymentController::class, 'checkout'])
+        ->middleware('role:student');
+    Route::get('/pending', [PaymentController::class, 'pendingPayments'])
+        ->middleware('role:student');
+    Route::get('/history', [PaymentController::class, 'history'])
+        ->middleware('role:student');
+    Route::get('/verify/{clientSecret}', [PaymentController::class, 'verify'])
+        ->middleware('role:student');
+
+    // Shared: receipt
+    Route::get('/{paymentId}/receipt', [PaymentController::class, 'receipt'])
+        ->middleware('role:student,admin,manager');
+});
 
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -122,4 +148,19 @@ Route::middleware(['auth:sanctum'])->prefix('manager')->group(function () {
 
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/student/certificates/{application_id}/preview', [CertificateController::class, 'preview']);
+});
+
+
+// logs routes
+Route::middleware('auth:sanctum')->prefix('logs')->group(function () {
+    Route::get('/', [LogController::class, 'index'])->middleware('role:admin,manager,super_admin');
+    Route::get('/application/{app_id}', [LogController::class, 'getLogsByAppId'])->middleware('role:admin,manager,super_admin');
+    Route::get('/user/{user_id}', [LogController::class, 'getLogsByUserId'])->middleware('role:admin,manager,super_admin');
+    Route::get('/type/{type}', [LogController::class, 'getLogsByType'])->middleware('role:admin,manager,super_admin');
+    Route::get('/submission', [LogController::class, 'getSubmissionLogs'])->middleware('role:admin,manager,super_admin');
+    Route::get('/assignment', [LogController::class, 'getAssignmentLogs'])->middleware('role:admin,manager,super_admin');
+    Route::get('/decision', [LogController::class, 'getDecisionLogs'])->middleware('role:admin,manager,super_admin');
+    Route::get('/status-change', [LogController::class, 'getStatusChangeLogs'])->middleware('role:admin,manager,super_admin');
+    Route::get('/auth', [LogController::class, 'getAuthLogs'])->middleware('role:admin,manager,super_admin');
+    Route::get('/serial-number/{serial_number}', [LogController::class, 'getLogsBySerialNumber'])->middleware('role:admin,manager,super_admin');
 });

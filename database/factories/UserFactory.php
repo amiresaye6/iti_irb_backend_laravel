@@ -12,7 +12,7 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'role' => fake()->randomElement(['student', 'admin', 'sample_officer', 'reviewer', 'manager', 'super_admin']),
+            'role' => fake()->randomElement(['student', 'admin', 'reviewer', 'manager', 'super_admin']),
             'full_name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
@@ -61,17 +61,6 @@ class UserFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'role' => 'manager',
-            'id_front_url' => null,
-            'id_back_url' => null,
-        ]);
-    }
-
-    public function sampleOfficer(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'role' => 'sample_officer',
-            'faculty' => null,
-            'department' => null,
             'id_front_url' => null,
             'id_back_url' => null,
         ]);

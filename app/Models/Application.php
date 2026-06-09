@@ -60,11 +60,6 @@ class Application extends Model
         return $this->hasMany(Review::class);
     }
 
-    public function sampleSizes()
-    {
-        return $this->hasMany(SampleSize::class);
-    }
-
     public function keywords()
     {
         return $this->hasMany(Keyword::class);

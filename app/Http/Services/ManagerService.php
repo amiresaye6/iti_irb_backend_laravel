@@ -14,16 +14,9 @@ class ManagerService
 {
     public function getPendingFinalApprovals()
     {
-        return Review::with(['application.student'])
-            ->whereHas('application', function ($query) {
-                $query->where('current_stage', 'approved_by_reviewer');
-            })
-            ->where('decision', 'approved')
-            ->orderBy(
-                Application::select('created_at')
-                    ->whereColumn('applications.id', 'reviews.application_id')
-                    ->latest()
-            )
+        return Application::with(['student'])
+            ->where('current_stage', 'final_review')
+            ->latest()
             ->get();
     }
 
@@ -35,60 +28,82 @@ class ManagerService
             ->get();
     }
 
-    public function getDecisionDetails($reviewId)
+    public function getDecisionDetails($applicationId)
     {
-        return Review::with(['application.student', 'comments'])
-            ->findOrFail($reviewId);
+        return Application::with(['student', 'reviews.comments'])
+            ->findOrFail($applicationId);
     }
 
-    public function processDecision($reviewId, $action, $managerId)
+    public function processDecision($applicationId, $decision, $notes, $managerId)
     {
-        return DB::transaction(function () use ($reviewId, $action, $managerId) {
-            $review = Review::with('application.student')->findOrFail($reviewId);
-            $application = $review->application;
+        return DB::transaction(function () use ($applicationId, $decision, $notes, $managerId) {
+            $application = Application::with('student')->findOrFail($applicationId);
             $student = $application->student;
 
-            if ($action === 'approve') {
-                $review->update(['decision' => 'approved']);
-                $application->update(['current_stage' => 'approved']);
-
-                $currentYear = date('Y');
-                $totalCertsThisYear = Certificate::whereYear('issued_at', $currentYear)->count();
-                $nextNumber = $totalCertsThisYear + 1;
-                $certNum = "CERT-" . $currentYear . "-" . str_pad($nextNumber, 5, '0', STR_PAD_LEFT);
-
-                $certificate = Certificate::create([
-                    'application_id' => $application->id,
-                    'student_id' => $student->id,
-                    'manager_id' => $managerId,
-                    'certificate_number' => $certNum,
-                    'issued_to_name' => $student->full_name,
-                    'issued_at' => now(),
-                ]);
-
-                Notification::create([
-                    'user_id' => $student->id,
-                    'application_id' => $application->id,
-                    'message' => "مبروك! تم اعتماد بحثك ذو الرقم التسلسلي ({$application->serial_number}) نهائياً. وتم إصدار شهادة رقم ({$certNum}) باسمك.",
-                    'channel' => 'system'
-                ]);
-
-                return ['status' => 'success', 'cert_url' => '/view-certificate/' . $application->id];
-            } elseif ($action === 'return') {
-                $review->update(['decision' => 'needs_modification']);
-                $application->update(['current_stage' => 'under_review']);
-
-                Notification::create([
-                    'user_id' => $student->id,
-                    'application_id' => $application->id,
-                    'message' => "تمت مراجعة طلبك ({$application->serial_number})، وتمت إعادته للمراجع لاستيفاء بعض الملاحظات.",
-                    'channel' => 'system'
-                ]);
-
-                return ['status' => 'success', 'cert_url' => null];
+            if (in_array($decision, ['rejected', 'needs_modification']) && empty(trim($notes))) {
+                throw new \Exception('يجب كتابة الملاحظات وأسباب القرار أولاً.');
             }
 
-            throw new \Exception('جراء غير صالح');
+            if ($decision === 'approved') {
+                $application->update([
+                    'current_stage' => 'approved',
+                    'needs_modifications' => 0,
+                    'manager_notes' => $notes
+                ]);
+
+                Notification::create([
+                    'user_id' => $student->id,
+                    'application_id' => $application->id,
+                    'message' => "تمت الموافقة المبدئية على بحثك ذو الرقم التسلسلي ({$application->serial_number}) من قِبل الإدارة، يرجى الانتظار لحين تحديد رسوم السداد.",
+                    'channel' => 'system'
+                ]);
+
+                return [
+                    'status' => 'success',
+                    'message' => 'تمت الموافقة بنجاح، جاري التحويل لتحديد الرسوم.'
+                ];
+            }
+
+            if ($decision === 'needs_modification') {
+                $application->update([
+                    'current_stage' => 'needs_modification',
+                    'needs_modifications' => 1,
+                    'manager_notes' => $notes
+                ]);
+
+                Notification::create([
+                    'user_id' => $student->id,
+                    'application_id' => $application->id,
+                    'message' => "تمت مراجعة طلبك ({$application->serial_number}) من قِبل المدير، وتوجد ملاحظات تتطلب التعديل: {$notes}",
+                    'channel' => 'system'
+                ]);
+
+                return [
+                    'status' => 'success',
+                    'message' => 'تم إرسال طلب التعديل للباحث بنجاح.'
+                ];
+            }
+            if ($decision === 'rejected') {
+                $application->update([
+                    'current_stage' => 'rejected',
+                    'needs_modifications' => 0,
+                    'manager_notes' => $notes
+                ]);
+
+                Notification::create([
+                    'user_id' => $student->id,
+                    'application_id' => $application->id,
+                    'message' => "نأسف لإبلاغك بأنه قد تم رفض طلب البحث ذو الرقم التسلسلي ({$application->serial_number}) نهائياً بناءً على مراجعة الإدارة.",
+                    'channel' => 'system'
+                ]);
+
+                return [
+                    'status' => 'success',
+                    'message' => 'تم رفض طلب البحث نهائياً.'
+                ];
+            }
+
+            throw new \Exception('إجراء غير صالح أو غير معرف بالسيستم.');
         });
     }
 
@@ -97,7 +112,7 @@ class ManagerService
         $approvedCount = Application::where('current_stage', 'approved')->count();
         $rejectedCount = Application::where('current_stage', 'rejected')->count();
         $certCount = Certificate::count();
-        $pendingCount = Application::whereIn('current_stage', ['under_review', 'approved_by_reviewer'])->count();
+        $pendingCount = Application::whereIn('current_stage', ['under_review', 'final_review'])->count();
 
         $totalApps = $approvedCount + $rejectedCount + $pendingCount;
 
