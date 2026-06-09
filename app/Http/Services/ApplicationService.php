@@ -4,6 +4,8 @@ namespace App\Http\Services;
 
 use App\Models\Application;
 use App\Models\Document;
+use App\Models\Review;
+use App\Models\ReviewComment;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
 
@@ -95,5 +97,11 @@ class ApplicationService
         $application->needs_modification = !$application->needs_modification;
         $application->save();
         return $application;
+    }
+
+    
+    public function getCommentsByApplicationId($id){
+        $comments = Review::where('application_id', $id)->with('comments')->get()->pluck('comments')->flatten();
+        return $comments;
     }
 }
