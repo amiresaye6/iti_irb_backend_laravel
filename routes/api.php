@@ -85,6 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/pending-researches', [ReviewController::class, 'getPendingResearches']);
         Route::get('/pending-assignments', [ReviewController::class, 'getPendingAssignments']);
         Route::get('/active-assignments', [ReviewController::class, 'getActiveAssignments']);
+        Route::get('/awaiting-decision-assignments', [ReviewController::class, 'getAwaitingDecisionAssignments']);
         Route::get('/history', [ReviewController::class, 'getAssignmentHistory']);
         Route::get('/reviews/{applicationId}', [ReviewController::class, 'getReviewDetails']);
         Route::post('/assignments/{reviewId}/accept', [ReviewController::class, 'acceptAssignment']);

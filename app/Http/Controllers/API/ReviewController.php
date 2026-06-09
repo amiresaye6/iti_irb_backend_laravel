@@ -137,4 +137,11 @@ class ReviewController extends Controller
     {
         return response()->json($this->reviewService->getAllSystemReviews());
     }
+
+    public function getAwaitingDecisionAssignments()
+    {
+        return response()->json(
+            $this->reviewService->getAwaitingDecisionAssignments(Auth::id())
+        );
+    }
 }
