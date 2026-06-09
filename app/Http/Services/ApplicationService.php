@@ -101,7 +101,8 @@ class ApplicationService
 
     
     public function getCommentsByApplicationId($id){
-        $comments = Review::where('application_id', $id)->with('comments')->get()->pluck('comments')->flatten();
+        //with user too
+        $comments = Review::where('application_id', $id)->with('reviewer')->with('comments')->get();
         return $comments;
     }
 }
