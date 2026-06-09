@@ -32,10 +32,11 @@ class PaymentController extends Controller
 
         $application = Application::findOrFail($applicationId);
 
-        if ($application->current_stage !== 'final_review') {
+        if ($application->current_stage !== 'approved') {
             return response()->json([
                 'status'  => false,
-                'message' => 'Application is not at the final_review stage.',
+                'message' => 'Application is not at the approved stage.',
+                "application" => $application
             ], 422);
         }
 
