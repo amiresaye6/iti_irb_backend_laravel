@@ -114,9 +114,14 @@ class ReviewController extends Controller
         return response()->json($this->reviewService->getApplicationsUnderReview());
     }
 
-    public function getAvailableReviewers()
+    public function getAvailableReviewers(\Illuminate\Http\Request $request)
     {
-        return response()->json($this->reviewService->getAvailableReviewers());
+        return response()->json($this->reviewService->getAvailableReviewers($request->query('applicationId')));
+    }
+
+    public function getAssignedReviewers($applicationId)
+    {
+        return response()->json($this->reviewService->getAssignedReviewers($applicationId));
     }
 
     public function assignReviewer(Request $request, $applicationId)

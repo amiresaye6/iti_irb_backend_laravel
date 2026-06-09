@@ -142,6 +142,7 @@ class ReviewService
         $reviews = Review::with(['application', 'application.student'])
             ->where('reviewer_id', $reviewerId)
             ->where('assignment_status', 'accepted')
+            ->whereIn('decision', ['pending' , 'needs_modification'])
             ->orderBy('assigned_at', 'desc')
             ->get();
 
@@ -166,7 +167,7 @@ class ReviewService
      */
     public function getReview($applicationId, $reviewerId)
     {
-        $review = Review::with(['application', 'application.documents', 'comments'])
+        $review = Review::with(['application.student', 'application.documents', 'comments'])
             ->where('application_id', $applicationId)
             ->where('reviewer_id', $reviewerId)
             ->first();
@@ -222,8 +223,11 @@ class ReviewService
     public function submitReviewDecision($applicationId, $reviewerId, $decision, $comment)
     {
         $app = Application::find($applicationId);
-        if (!$app || $app->current_stage === 'approved') {
-            return ['success' => false, 'message' => 'لا يمكن تعديل القرار بعد الاعتماد النهائي'];
+        if (!$app) {
+            return ['success' => false, 'message' => 'البحث غير موجود'];
+        }
+        if ($app->current_stage !== 'under_review') {
+            return ['success' => false, 'message' => 'لا يمكن مراجعة هذا البحث إلا في مرحلة المراجعة'];
         }
 
         $validDecisions = ['approved', 'needs_modification', 'rejected'];
@@ -258,12 +262,12 @@ class ReviewService
             ]);
         }
 
-        // ── REJECTED: immediately lock the application ──────────────────
-        if ($decision === 'rejected') {
-            if (!in_array($app->current_stage, ['approved', 'rejected'])) {
-                $app->update(['current_stage' => 'rejected']);
-                
-                // Notify student
+        // ── FINAL DECISION (APPROVED / REJECTED) ──────────────────────────
+        if (in_array($decision, ['approved', 'rejected'])) {
+            $app->update(['current_stage' => 'final_review']);
+            
+            // Notify student if rejected
+            if ($decision === 'rejected') {
                 Notification::create([
                     'user_id' => $app->student_id,
                     'application_id' => $app->id,
@@ -271,22 +275,12 @@ class ReviewService
                     'channel' => 'system'
                 ]);
             }
-            return ['success' => true, 'message' => 'تم حفظ قرار الرفض بنجاح'];
-        }
 
-        //  Any APPROVED: promote to manager ──────────────────────────
-        $allReviews = Review::where('application_id', $applicationId)
-            ->where('assignment_status', 'accepted')
-            ->get();
-            
-        $total = $allReviews->count();
-        $approvedCount = $allReviews->where('decision', 'approved')->count();
-
-        if ($total > 0 && $approvedCount > 0) {
-            $app->update(['current_stage' => 'final_review']);
-            
+            // Notify Managers
             $managers = User::where('role', 'manager')->get();
-            $message = "تمت الموافقة على البحث رقم ({$app->serial_number}) من قبل جميع المراجعين ويحتاج لاعتمادك النهائي.";
+            $statusText = $decision === 'approved' ? 'بالموافقة على' : 'برفض';
+            $message = "تم اتخاذ قرار {$statusText} البحث رقم ({$app->serial_number}) من قبل المراجع ويحتاج لاعتمادك النهائي.";
+            
             foreach ($managers as $mgr) {
                 Notification::create([
                     'user_id' => $mgr->id,
@@ -304,20 +298,63 @@ class ReviewService
 
     public function getApplicationsUnderReview()
     {
-        return Application::with(['student'])
+        $applications = Application::with(['student'])
             ->where('current_stage', 'under_review')
             ->orderBy('created_at', 'asc')
             ->get();
+
+        foreach ($applications as $app) {
+            $activeReview = Review::with('reviewer')
+                ->where('application_id', $app->id)
+                ->whereIn('assignment_status', ['awaiting_acceptance', 'accepted'])
+                ->orderBy('assigned_at', 'desc')
+                ->first();
+                
+            if ($activeReview) {
+                $app->active_assignment = [
+                    'assignment_status' => $activeReview->assignment_status,
+                    'full_name' => $activeReview->reviewer ? $activeReview->reviewer->full_name : 'مجهول'
+                ];
+            } else {
+                $app->active_assignment = null;
+            }
+        }
+        
+        return $applications;
     }
 
-    public function getAvailableReviewers()
+    public function getAvailableReviewers($applicationId = null)
     {
-        return User::where('role', 'reviewer')->where('is_active', true)->get();
+        $query = User::where('role', 'reviewer')->where('is_active', true);
+
+        if ($applicationId) {
+            $assignedReviewerIds = Review::where('application_id', $applicationId)
+                ->whereIn('assignment_status', ['awaiting_acceptance', 'accepted'])
+                ->pluck('reviewer_id')
+                ->toArray();
+                
+            if (!empty($assignedReviewerIds)) {
+                $query->whereNotIn('id', $assignedReviewerIds);
+            }
+        }
+
+        return $query->get();
     }
 
     public function getAssignedReviewers($applicationId)
     {
-        return Review::with('reviewer')->where('application_id', $applicationId)->get();
+        $reviews = Review::with('reviewer')->where('application_id', $applicationId)->orderBy('assigned_at', 'desc')->get();
+        return $reviews->map(function ($review) {
+            return [
+                'review_id'         => $review->id,
+                'reviewer_id'       => $review->reviewer_id,
+                'reviewer_name'     => $review->reviewer ? $review->reviewer->full_name : '—',
+                'assignment_status' => $review->assignment_status,
+                'decision'          => $review->decision,
+                'assigned_at'       => $review->assigned_at,
+                'refusal_reason'    => $review->refusal_reason,
+            ];
+        });
     }
 
     public function assignReviewer($applicationId, $reviewerId, $adminId)
@@ -339,6 +376,16 @@ class ReviewService
             'assignment_status' => 'awaiting_acceptance',
             'decision' => 'pending'
         ]);
+
+        $app = Application::find($applicationId);
+        if ($app) {
+            Notification::create([
+                'user_id' => $reviewerId,
+                'application_id' => $applicationId,
+                'message' => "تم تكليفك بمراجعة بحث جديد برقم ({$app->serial_number}). يرجى قبول أو رفض الإسناد.",
+                'channel' => 'system'
+            ]);
+        }
 
         return true;
     }
@@ -394,6 +441,9 @@ class ReviewService
             ->where('reviewer_id', $reviewerId)
             ->where('assignment_status', 'accepted')
             ->whereNotIn('decision', ['approved', 'rejected'])
+            ->whereHas('application', function ($q) {
+                $q->where('current_stage', 'under_review');
+            })
             ->orderBy('assigned_at', 'desc')
             ->get();
 

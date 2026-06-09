@@ -124,6 +124,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/under-review', [ReviewController::class, 'getApplicationsUnderReview']);
         Route::get('/available-reviewers', [ReviewController::class, 'getAvailableReviewers']);
         Route::post('/assign/{applicationId}', [ReviewController::class, 'assignReviewer']);
+        Route::get('/assignments/{applicationId}', [ReviewController::class, 'getAssignedReviewers']);
         Route::get('/all', [ReviewController::class, 'getAllSystemReviews']);
     });
 
