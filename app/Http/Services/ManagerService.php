@@ -16,6 +16,7 @@ class ManagerService
     {
         return Application::with(['student'])
             ->where('current_stage', 'final_review')
+            ->where('needs_modification', 0)
             ->latest()
             ->get();
     }
@@ -23,7 +24,10 @@ class ManagerService
     public function getFinalApprovalsHistory()
     {
         return Application::with(['student', 'reviews'])
-            ->where('current_stage', 'approved')
+            ->where(function ($query) {
+                $query->whereIn('current_stage', ['approved', 'rejected'])
+                    ->orWhere('needs_modification', 1);
+            })
             ->orderBy('updated_at', 'desc')
             ->get();
     }
