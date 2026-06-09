@@ -38,7 +38,7 @@ Route::middleware('auth:sanctum')->prefix('applications')->group(function () {
     Route::post('/reject/{id}', [ApplicationController::class, 'rejectApp'])->middleware('role:admin');
     Route::get('/student', [ApplicationController::class, 'getAppsByUserId'])->middleware('role:student');
     Route::get('/student/{id}', [ApplicationController::class, 'getAppsByStudentId'])->middleware('role:admin');
-    Route::get('/{id}', [ApplicationController::class, 'show'])->middleware('role:admin,student');
+    Route::get('/{id}', [ApplicationController::class, 'show'])->middleware('role:admin,student,manager');
     Route::patch('/{id}', [ApplicationController::class, 'edit'])->middleware('role:student');
     Route::post('/{id}', [ApplicationController::class, 'toNextStage'])->middleware('role:admin,reviewer,manager');
     Route::get('/{id}/Docs', [DocumentController::class, 'getDocsByAppId']);
@@ -81,7 +81,7 @@ Route::middleware('auth:sanctum')->prefix('payments')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
 
-    
+
 
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/profile', [UserController::class, 'show']);
@@ -104,7 +104,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ─── REVIEWS ROUTES ───
-    
+
     // Reviewer only
     Route::middleware('role:reviewer')->prefix('reviewer')->group(function () {
         Route::get('/dashboard', [ReviewController::class, 'getDashboardKPIs']);
