@@ -346,6 +346,17 @@ class ReviewService
                     'channel'        => 'system',
                 ]);
             }
+        } elseif ($decision === 'rejected') {
+            // Permanently reject the application
+            $app->update(['current_stage' => 'rejected']);
+            
+            // Notify student
+            Notification::create([
+                'user_id' => $app->student_id,
+                'application_id' => $app->id,
+                'message' => "تم رفض بحثك رقم ({$app->serial_number}) من قبل المراجع. يرجى مراجعة ملاحظات المراجعة.",
+                'channel' => 'system'
+            ]);
         }
  
         return ['success' => true, 'message' => 'تم حفظ القرار بنجاح'];
@@ -360,7 +371,7 @@ class ReviewService
     public function getApplicationsUnderReview()
     {
         $applications = Application::with(['student'])
-            ->where('current_stage', 'under_review')
+            ->whereIn('current_stage', ['pending_admin', 'under_review']) 
             ->orderBy('created_at', 'asc')
             ->get();
 
@@ -440,6 +451,10 @@ class ReviewService
 
         $app = Application::find($applicationId);
         if ($app) {
+            if ($app->current_stage === 'pending_admin') {
+                $app->update(['current_stage' => 'under_review']);
+            }
+
             Notification::create([
                 'user_id' => $reviewerId,
                 'application_id' => $applicationId,

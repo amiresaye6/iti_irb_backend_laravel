@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Services\EmailService;
 
 class User extends Authenticatable
 {
@@ -101,5 +102,23 @@ class User extends Authenticatable
     public function hasRole(string|array $roles): bool
     {
     return in_array($this->role, (array) $roles);
+    }
+    // email 
+    public function sendPasswordResetNotification($token): void
+    {
+    $resetUrl = config('app.frontend_url')
+        . '/reset-password?token=' . $token
+        . '&email=' . urlencode($this->email);
+
+    EmailService::send(
+        $this->email,
+        $this->full_name,
+        'إعادة تعيين كلمة المرور - نظام IRB',
+        "لقد تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بحسابك.\nإذا لم تقم بهذا الطلب، يمكنك تجاهل هذه الرسالة بأمان وستبقى كلمة المرور كما هي.",
+        null,
+        null,
+        'إعادة تعيين كلمة المرور ←',
+        $resetUrl
+    );
     }
 }

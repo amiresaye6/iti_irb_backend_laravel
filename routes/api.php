@@ -15,6 +15,7 @@ use App\Http\Controllers\API\SuperAdminController;
 
 use App\Http\Controllers\API\PaymentController;
 
+use App\Http\Controllers\API\DashboardController;
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
@@ -38,12 +39,13 @@ Route::middleware('auth:sanctum')->prefix('applications')->group(function () {
     Route::post('/reject/{id}', [ApplicationController::class, 'rejectApp'])->middleware('role:admin');
     Route::get('/student', [ApplicationController::class, 'getAppsByUserId'])->middleware('role:student');
     Route::get('/student/{id}', [ApplicationController::class, 'getAppsByStudentId'])->middleware('role:admin');
-    Route::get('/{id}', [ApplicationController::class, 'show'])->middleware('role:admin,student');
+    Route::get('/{id}', [ApplicationController::class, 'show'])->middleware('role:admin,student,manager');
     Route::patch('/{id}', [ApplicationController::class, 'edit'])->middleware('role:student');
     Route::post('/{id}', [ApplicationController::class, 'toNextStage'])->middleware('role:admin,reviewer,manager');
     Route::get('/{id}/Docs', [DocumentController::class, 'getDocsByAppId']);
     Route::post('/{id}/ask-for-modification', [ApplicationController::class, 'askForModification'])->middleware('role:admin,reviewer,manager');
     Route::post('/{id}/ask-for-review', [ApplicationController::class, 'askForReview_afterModifications'])->middleware('role:student');
+    Route::get('/{id}/comments', [ApplicationController::class, 'getCommentsByApplicationId']);
 });
 
 // Documents routes
@@ -81,7 +83,7 @@ Route::middleware('auth:sanctum')->prefix('payments')->group(function () {
 
 Route::middleware('auth:sanctum')->group(function () {
 
-    
+
 
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/profile', [UserController::class, 'show']);
@@ -102,9 +104,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('role:super_admin')->group(function () {
         Route::get('/super-admin/users',  [SuperAdminController::class, 'index']);
     });
+    // Dashboard — Admin, Manager, Super Admin only
+    Route::prefix('dashboard')->middleware('role:admin,manager,super_admin')->group(function () {
+    Route::get('/stats',                 [DashboardController::class, 'stats']);
+    Route::get('/logs',                  [DashboardController::class, 'logs']);
+    Route::get('/applications/recent',   [DashboardController::class, 'recentApplications']);
+});
 
     // ─── REVIEWS ROUTES ───
-    
+
     // Reviewer only
     Route::middleware('role:reviewer')->prefix('reviewer')->group(function () {
         Route::get('/dashboard', [ReviewController::class, 'getDashboardKPIs']);

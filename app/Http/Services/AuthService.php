@@ -79,6 +79,16 @@ class AuthService
                     'remember_token' => Str::random(60),
                 ])->save();
                 event(new PasswordReset($user));
+                \App\Services\EmailService::send(
+            $user->email,
+            $user->full_name,
+            'تم تغيير كلمة المرور بنجاح - نظام IRB',
+            "تم تغيير كلمة المرور الخاصة بحسابك بنجاح.\nإذا لم تقم بهذا التغيير، يرجى التواصل مع الدعم الفني فوراً.",
+            null,
+            null,
+            'تسجيل الدخول ←',
+            config('app.frontend_url') . '/login'
+        );
             }
         );
         return $status === Password::PASSWORD_RESET;

@@ -44,8 +44,11 @@
 
                             <!-- CTA Button -->
                             <div style="text-align:center;margin:28px 0;">
-                                <a href="{{ config('app.url') }}" style="display:inline-block;background:linear-gradient(135deg,#1abc9c 0%,#16a085 100%);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:10px;font-size:15px;font-weight:800;letter-spacing:0.5px;box-shadow:0 4px 15px rgba(26,188,156,0.35);">
+                                <!-- <a href="{{ config('app.url') }}" style="display:inline-block;background:linear-gradient(135deg,#1abc9c 0%,#16a085 100%);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:10px;font-size:15px;font-weight:800;letter-spacing:0.5px;box-shadow:0 4px 15px rgba(26,188,156,0.35);">
                                     الدخول إلى النظام ←
+                                </a> -->
+                                <a href="{{ $ctaUrl ?? config('app.url') }}" style="display:inline-block;background:linear-gradient(135deg,#1abc9c 0%,#16a085 100%);color:#ffffff;text-decoration:none;padding:14px 40px;border-radius:10px;font-size:15px;font-weight:800;letter-spacing:0.5px;box-shadow:0 4px 15px rgba(26,188,156,0.35);">
+                                    {{ $ctaText ?? 'الدخول إلى النظام ←' }}
                                 </a>
                             </div>
 

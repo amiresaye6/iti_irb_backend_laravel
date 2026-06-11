@@ -5,14 +5,22 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Http\Services\ManagerService;
+use App\Models\Application;
+use App\Models\ReviewComment;
+use App\Models\Notification;
+use Illuminate\Support\Facades\DB;
+use App\Http\Services\LogsService;
 
 class ManagerController extends Controller
 {
     protected $managerService;
 
-    public function __construct(ManagerService $managerService)
+    protected $logsService;
+
+    public function __construct(ManagerService $managerService, LogsService $logsService)
     {
         $this->managerService = $managerService;
+        $this->logsService = $logsService;
     }
 
 
@@ -57,18 +65,78 @@ class ManagerController extends Controller
         ]);
 
         try {
-            $result = $this->managerService->processDecision(
-                $id,
-                $request->decision,
-                $request->notes,
-                $request->user()->id
-            );
+            $result = DB::transaction(function () use ($id, $request) {
+                $application = Application::findOrFail($id);
+                $managerId = $request->user()->id;
 
-            if ($request->decision === 'approved') {
-                $result['action'] = 'redirect_payment';
-            } else {
-                $result['action'] = 'redirect_dashboard';
-            }
+
+
+                if ($request->decision === 'approved') {
+                    $application->current_stage = 'approved';
+                    $application->save();
+                    $this->logsService->store($application->id, $managerId, 'تم اعتماد البحث نهائياً وتحويله لمرحلة الدفع', 'decision');
+
+                    Notification::create([
+                        'user_id'        => $application->student_id,
+                        'application_id' => $application->id,
+                        'message'        => "تهانينا! تم اعتماد بحثك رقم ({$application->serial_number}) نهائياً، يرجى الانتقال لسداد الرسوم الماليّة.",
+                        'channel'        => 'system',
+                        'is_read'        => 0,
+                        'email_sent'     => 1,
+                    ]);
+
+                    return [
+                        'status' => 'success',
+                        'message' => 'تم اعتماد البحث بنجاح، وإرسال الإشعار للباحث، والآن سوف يتم تحويل الطلب لمرحلة سداد الرسوم.',
+                        'action' => 'redirect_payment'
+                    ];
+                }
+                if ($request->decision === 'rejected') {
+                    $application->current_stage = 'rejected';
+                    $application->save();
+                    $this->logsService->store($application->id, $managerId, 'تم رفض البحث نهائياً من قبل الإدارة', 'decision');
+                    Notification::create([
+                        'user_id'        => $application->student_id,
+                        'application_id' => $application->id,
+                        'message'        => "للأسف، تم رفض طلبك البحثي رقم ({$application->serial_number}) نهائياً. سبب الرفض: " . ($request->notes ?? 'لم يتم ذكر أسباب إضافية.'),
+                        'channel'        => 'system',
+                        'is_read'        => 0,
+                        'email_sent'     => 1,
+                    ]);
+
+                    return [
+                        'status' => 'success',
+                        'message' => 'تم رفض البحث نهائياً، وحفظ الملاحظات، وإشعار الباحث المباشر.',
+                        'action' => 'redirect_dashboard'
+                    ];
+                }
+                if ($request->decision === 'needs_modification') {
+                    $application->needs_modification = 1;
+                    $application->save();
+                    $this->logsService->store($application->id, $managerId, 'تم طلب إجراء تعديلات على البحث من الباحث', 'decision');
+
+                    Notification::create([
+                        'user_id'        => $application->student_id,
+                        'application_id' => $application->id,
+                        'message'        => "برجاء العلم أن بحثك رقم ({$application->serial_number}) يحتاج إلى بعض التعديلات بناءً على مراجعة الإدارة. الملاحظات: " . ($request->notes ?? 'يرجى مراجعة صفحة الطلب لمزيد من التفاصيل.'),
+                        'channel'        => 'system',
+                        'is_read'        => 0,
+                        'email_sent'     => 1,
+                    ]);
+
+                    return [
+                        'status' => 'success',
+                        'message' => 'تم إرسال طلب التعديل للباحث بنجاح، وحفظ الملاحظات في الإشعارات.',
+                        'action' => 'redirect_dashboard'
+                    ];
+                }
+
+
+                return [
+                    'status' => 'error',
+                    'message' => 'القرار غير معرف حالياً.'
+                ];
+            });
 
             return response()->json($result);
         } catch (\Exception $e) {

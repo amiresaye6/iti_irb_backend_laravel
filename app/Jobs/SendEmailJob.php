@@ -22,6 +22,8 @@ class SendEmailJob implements ShouldQueue
     public string $messageBody;
     public ?string $appSerial;
     public ?int $notificationId;
+    public ?string $ctaText;
+    public ?string $ctaUrl;
 
     /**
      * Create a new job instance.
@@ -32,7 +34,9 @@ class SendEmailJob implements ShouldQueue
         string $subjectLine,
         string $messageBody,
         ?string $appSerial = null,
-        ?int $notificationId = null
+        ?int $notificationId = null,
+        ?string $ctaText = null,
+        ?string $ctaUrl = null
     ) {
         $this->toEmail = $toEmail;
         $this->recipientName = $recipientName;
@@ -40,6 +44,8 @@ class SendEmailJob implements ShouldQueue
         $this->messageBody = $messageBody;
         $this->appSerial = $appSerial;
         $this->notificationId = $notificationId;
+        $this->ctaText = $ctaText;
+        $this->ctaUrl = $ctaUrl;
     }
 
     /**
@@ -52,7 +58,9 @@ class SendEmailJob implements ShouldQueue
                 $this->recipientName,
                 $this->messageBody,
                 $this->appSerial,
-                $this->subjectLine
+                $this->subjectLine,
+                $this->ctaText,
+                $this->ctaUrl
             ));
 
             if ($this->notificationId) {
