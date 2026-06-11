@@ -82,14 +82,21 @@ class ReviewController extends Controller
     {
         $request->validate([
             'decision' => 'required|in:approved,needs_modification,rejected',
-            'comment' => 'nullable|string'
+            'comment' => 'nullable|string' ,
         ]);
+
+        if($request->decision !== 'needs_modification'){
+            $request->validate([
+                'review_document' => 'required|file|mimes:pdf,doc,docx|max:4096',
+            ]);
+        }
 
         $result = $this->reviewService->submitReviewDecision(
             $applicationId, 
             Auth::id(), 
             $request->decision, 
-            $request->comment
+            $request->comment ?? '',
+            $request->file('review_document') ?? null,
         );
 
         if ($result['success']) {

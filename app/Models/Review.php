@@ -20,6 +20,7 @@ class Review extends Model
         'decision',
         'refusal_reason',
         'reviewed_at',
+        'review_document',
     ];
 
     public $timestamps = false;

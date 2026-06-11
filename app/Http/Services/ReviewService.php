@@ -8,9 +8,23 @@ use App\Models\Review;
 use App\Models\ReviewComment;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Str;
+
 
 class ReviewService
 {
+
+
+     /**
+     * Returns the public URL for the IRB reviewer checklist template.
+     * Used by the API so the frontend can offer a "Download Template" button.
+     */
+    public function getChecklistTemplateUrl(): string
+    {
+        return asset('storage/uploads/reviews/IRB-ReviewerCHECKLIST.doc');
+    }
+
     /**
      * Dashboard KPIs for a specific reviewer
      */
@@ -172,6 +186,11 @@ class ReviewService
             ->where('reviewer_id', $reviewerId)
             ->first();
 
+        $review->checklist_template_url =$this->getChecklistTemplateUrl();
+        $review->review_document_url = $review->review_document
+        ? asset('storage/' . $review->review_document)
+        : null;
+        
         if ($review && $review->application->is_blinded) {
             $review->application->principal_investigator = "معلومات محجوبة";
             $review->application->co_investigators = null;
@@ -217,11 +236,17 @@ class ReviewService
         return false;
     }
 
-    /**
-     * Submit Review Decision
-     */
-    public function submitReviewDecision($applicationId, $reviewerId, $decision, $comment)
-    {
+   
+    
+
+     public function submitReviewDecision(
+        int $applicationId,
+        int $reviewerId,
+        string $decision,
+        string $comment = '',
+        ?UploadedFile $reviewDocument = null
+    ): array {
+        // ── Validate application ──────────────────────────────────────────────
         $app = Application::find($applicationId);
         if (!$app) {
             return ['success' => false, 'message' => 'البحث غير موجود'];
@@ -229,70 +254,106 @@ class ReviewService
         if ($app->current_stage !== 'under_review') {
             return ['success' => false, 'message' => 'لا يمكن مراجعة هذا البحث إلا في مرحلة المراجعة'];
         }
-
+ 
+        // ── Validate decision value ───────────────────────────────────────────
         $validDecisions = ['approved', 'needs_modification', 'rejected'];
         if (!in_array($decision, $validDecisions)) {
             return ['success' => false, 'message' => 'قرار غير صالح'];
         }
-
+ 
+        // ── Comment required for non-approval decisions ───────────────────────
         if ($decision !== 'approved' && empty(trim($comment))) {
             return ['success' => false, 'message' => 'يجب إضافة تعليقات عند الرفض أو طلب التعديل'];
         }
-
+ 
+        // ── Checklist document required for final decisions ───────────────────
+        if (in_array($decision, ['approved', 'rejected']) && !$reviewDocument) {
+            return ['success' => false, 'message' => 'يجب إرفاق قائمة تدقيق المراجعة المعبأة عند الموافقة أو الرفض'];
+        }
+ 
+        // ── Find the accepted review record ───────────────────────────────────
         $review = Review::where('application_id', $applicationId)
             ->where('reviewer_id', $reviewerId)
             ->where('assignment_status', 'accepted')
             ->first();
-
+ 
         if (!$review) {
             return ['success' => false, 'message' => 'لم يتم العثور على المراجعة أو لم يتم قبول الإسناد بعد'];
         }
-
-        // Save Decision
-        $review->update([
-            'decision' => $decision,
-            'reviewed_at' => now()
-        ]);
-
-        // Save Comment
+ 
+        // ── Store the uploaded checklist document ─────────────────────────────
+        $reviewDocumentPath = null;
+        if ($reviewDocument) {
+            // Build a clean student name slug (works for Arabic or Latin names)
+            $studentName = $app->student?->full_name ?? $app->principal_investigator ?? 'reviewer';
+            $studentSlug = Str::slug($studentName, '_') ?: 'student';
+            if (empty($studentSlug)) {
+                // Fallback for purely Arabic names that Str::slug empties
+                $studentSlug = 'student_' . $app->student_id;
+            }
+ 
+            $extension  = $reviewDocument->getClientOriginalExtension() ?: 'pdf';
+            $uniqueId   = uniqid('', true); // e.g. 64f3a1b2c3d4e.5678
+            $filename   = "{$studentSlug}_review{$review->id}_{$uniqueId}.{$extension}";
+ 
+            // Directory: uploads/reviews/{review_id}/
+            $directory  = "uploads/reviews/{$review->id}";
+ 
+            // Store inside storage/app/public/ so the symlink exposes it
+            $reviewDocumentPath = $reviewDocument->storeAs($directory, $filename, 'public');
+        }
+ 
+        // ── Persist decision ──────────────────────────────────────────────────
+        $updateData = [
+            'decision'    => $decision,
+            'reviewed_at' => now(),
+        ];
+        if ($reviewDocumentPath) {
+            $updateData['review_document'] = $reviewDocumentPath;
+        }
+        $review->update($updateData);
+ 
+        // ── Persist comment ───────────────────────────────────────────────────
         if (!empty(trim($comment))) {
             ReviewComment::create([
                 'review_id' => $review->id,
-                'comment' => $comment
+                'comment'   => $comment,
             ]);
         }
-
-        // ── FINAL DECISION (APPROVED / REJECTED) ──────────────────────────
+ 
+        // ── Handle final decisions (approved / rejected) ──────────────────────
         if (in_array($decision, ['approved', 'rejected'])) {
             $app->update(['current_stage' => 'final_review']);
-            
-            // Notify student if rejected
+ 
             if ($decision === 'rejected') {
                 Notification::create([
-                    'user_id' => $app->student_id,
+                    'user_id'        => $app->student_id,
                     'application_id' => $app->id,
-                    'message' => "تم رفض بحثك رقم ({$app->serial_number}) من قبل المراجع. يرجى مراجعة ملاحظات المراجعة.",
-                    'channel' => 'system'
+                    'message'        => "تم رفض بحثك رقم ({$app->serial_number}) من قبل المراجع. يرجى مراجعة ملاحظات المراجعة.",
+                    'channel'        => 'system',
                 ]);
             }
-
-            // Notify Managers
-            $managers = User::where('role', 'manager')->get();
+ 
+            $managers   = User::where('role', 'manager')->get();
             $statusText = $decision === 'approved' ? 'بالموافقة على' : 'برفض';
-            $message = "تم اتخاذ قرار {$statusText} البحث رقم ({$app->serial_number}) من قبل المراجع ويحتاج لاعتمادك النهائي.";
-            
+            $message    = "تم اتخاذ قرار {$statusText} البحث رقم ({$app->serial_number}) من قبل المراجع ويحتاج لاعتمادك النهائي.";
+ 
             foreach ($managers as $mgr) {
                 Notification::create([
-                    'user_id' => $mgr->id,
+                    'user_id'        => $mgr->id,
                     'application_id' => $app->id,
-                    'message' => $message,
-                    'channel' => 'system'
+                    'message'        => $message,
+                    'channel'        => 'system',
                 ]);
             }
         }
-
+ 
         return ['success' => true, 'message' => 'تم حفظ القرار بنجاح'];
     }
+
+
+
+
 
     // ── ADMIN FUNCTIONS ───────────────────────────────────────────────
 

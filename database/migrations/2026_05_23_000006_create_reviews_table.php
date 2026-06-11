@@ -20,6 +20,7 @@ return new class extends Migration
             $table->enum('decision', [
                 'pending', 'approved', 'needs_modification', 'rejected'
             ])->default('pending');
+            $table->string('review_document')->nullable();
             $table->text('refusal_reason')->nullable();
             $table->timestamp('reviewed_at')->nullable();
         });
