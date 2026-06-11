@@ -23,7 +23,9 @@ class EmailService
         string $subjectLine,
         string $messageBody,
         ?string $appSerial = null,
-        ?int $notificationId = null
+        ?int $notificationId = null,
+        ?string $ctaText = null,
+    ?string $ctaUrl = null
     ): void {
         SendEmailJob::dispatch(
             $toEmail,
@@ -31,7 +33,9 @@ class EmailService
             $subjectLine,
             $messageBody,
             $appSerial,
-            $notificationId
+            $notificationId,
+            $ctaText,
+            $ctaUrl
         );
     }
 }

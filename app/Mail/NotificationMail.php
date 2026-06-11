@@ -20,17 +20,35 @@ class NotificationMail extends Mailable
     /**
      * Create a new message instance.
      */
+    // public function __construct(
+    //     string $recipientName,
+    //     string $messageBody,
+    //     ?string $appSerial,
+    //     string $subjectLine
+    // ) {
+    //     $this->recipientName = $recipientName;
+    //     $this->messageBody = $messageBody;
+    //     $this->appSerial = $appSerial;
+    //     $this->subjectLine = $subjectLine;
+    // }
+    public ?string $ctaText;
+    public ?string $ctaUrl;
     public function __construct(
-        string $recipientName,
-        string $messageBody,
-        ?string $appSerial,
-        string $subjectLine
+           string $recipientName,
+           string $messageBody,
+            ?string $appSerial,
+            string $subjectLine,
+            ?string $ctaText = null,
+            ?string $ctaUrl = null
     ) {
-        $this->recipientName = $recipientName;
-        $this->messageBody = $messageBody;
-        $this->appSerial = $appSerial;
-        $this->subjectLine = $subjectLine;
-    }
+           $this->recipientName = $recipientName;
+           $this->messageBody = $messageBody;
+           $this->appSerial = $appSerial;
+           $this->subjectLine = $subjectLine;
+           $this->ctaText = $ctaText;
+           $this->ctaUrl = $ctaUrl;
+   }
+   
 
     /**
      * Get the message envelope.
@@ -45,17 +63,30 @@ class NotificationMail extends Mailable
     /**
      * Get the message content definition.
      */
+    // public function content(): Content
+    // {
+    //     return new Content(
+    //         view: 'emails.notification',
+    //         with: [
+    //             'recipientName' => $this->recipientName,
+    //             'messageBody' => $this->messageBody,
+    //             'appSerial' => $this->appSerial,
+    //         ],
+    //     );
+    // }
     public function content(): Content
-    {
-        return new Content(
-            view: 'emails.notification',
-            with: [
-                'recipientName' => $this->recipientName,
-                'messageBody' => $this->messageBody,
-                'appSerial' => $this->appSerial,
-            ],
-        );
-    }
+{
+    return new Content(
+        view: 'emails.notification',
+        with: [
+            'recipientName' => $this->recipientName,
+            'messageBody' => $this->messageBody,
+            'appSerial' => $this->appSerial,
+            'ctaText' => $this->ctaText,
+            'ctaUrl' => $this->ctaUrl,
+        ],
+    );
+}
 
     /**
      * Get the attachments for the message.
